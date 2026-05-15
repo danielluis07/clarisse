@@ -139,7 +139,11 @@ export const LoginForm = () => {
               />
             </Field>
 
-            <Button type="submit" size="lg" className="mt-2 w-full">
+            <Button
+              type="submit"
+              size="lg"
+              className="mt-2 w-full"
+              isLoading={isLoading}>
               Entrar
             </Button>
           </FieldGroup>

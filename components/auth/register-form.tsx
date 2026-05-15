@@ -195,7 +195,11 @@ export const RegisterForm = () => {
               />
             </Field>
 
-            <Button type="submit" size="lg" className="mt-2 w-full">
+            <Button
+              type="submit"
+              size="lg"
+              className="mt-2 w-full"
+              isLoading={isLoading}>
               Criar conta
             </Button>
           </FieldGroup>
