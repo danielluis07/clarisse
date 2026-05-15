@@ -114,9 +114,14 @@ const errorCodes = {
   },
 } satisfies ErrorTypes;
 
+const fallbackErrorMessage = {
+  en: "Something went wrong",
+  ptBr: "Ocorreu um erro",
+} as const;
+
 export const getErrorMessage = (code: string, lang: "en" | "ptBr") => {
   if (code in errorCodes) {
     return errorCodes[code as keyof typeof errorCodes][lang];
   }
-  return "";
+  return fallbackErrorMessage[lang];
 };

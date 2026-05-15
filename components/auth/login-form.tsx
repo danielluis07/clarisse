@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { z } from "zod";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
@@ -29,10 +29,9 @@ import { signInInput } from "@/validations/auth";
 
 type FormValues = z.infer<typeof signInInput>;
 
-export const LoginForm = () => {
+export const LoginForm = ({ nextPath }: { nextPath?: string }) => {
   const { signIn } = authClient;
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -53,10 +52,9 @@ export const LoginForm = () => {
         onRequest: () => setIsLoading(true),
         onSuccess: (ctx) => {
           setIsLoading(false);
-          const next = searchParams.get("next");
           const fallback =
             ctx.data.user.role === "admin" ? "/admin" : "/account";
-          router.push(next ?? fallback);
+          router.push(nextPath ?? fallback);
           router.refresh();
         },
         onError: (ctx) => {
