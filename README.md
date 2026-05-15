@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clarisse — E-commerce de Moda Feminina
 
-## Getting Started
+Clarisse é um projeto fictício de e-commerce voltado para moda feminina minimalista, elegante e sofisticada. A proposta da loja é vender peças como blazers, calças de alfaiataria, vestidos minimalistas, camisas oversized e bolsas sofisticadas.
 
-First, run the development server:
+O projeto foi desenvolvido com foco em simular uma plataforma de e-commerce moderna, próxima da experiência de soluções como Shopify, mas construída do zero com uma stack fullstack baseada em Next.js, Drizzle ORM, Neon Database e tRPC.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Além da vitrine pública da loja, o projeto conta com um painel administrativo onde o administrador pode gerenciar produtos, categorias, coleções, variações, imagens e estoque.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Objetivo do projeto
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O principal objetivo deste projeto é demonstrar a construção de uma aplicação realista de e-commerce, indo além de um CRUD simples de produtos.
 
-## Learn More
+A ideia é apresentar uma base sólida para uma loja virtual moderna, com:
 
-To learn more about Next.js, take a look at the following resources:
+- Dashboard administrativo
+- Gerenciamento de produtos
+- Produtos com variações
+- Controle de estoque
+- Categorias e coleções
+- Imagens de produtos
+- Estrutura preparada para carrinho e checkout
+- Arquitetura modular e escalável
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Este projeto foi criado para fins de portfólio, estudo e demonstração técnica.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Conceito da loja
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Clarisse é uma marca fictícia de moda feminina com foco em peças sofisticadas para o dia a dia, trabalho e ocasiões especiais.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A curadoria da loja é baseada em uma estética minimalista e premium, com produtos como:
+
+- Blazers
+- Calças de alfaiataria
+- Vestidos minimalistas
+- Camisas oversized
+- Bolsas sofisticadas
+
+O posicionamento da marca é voltado para mulheres que buscam elegância, versatilidade e peças atemporais.
+
+---
+
+## Stack utilizada
+
+O projeto utiliza uma stack moderna baseada em TypeScript:
+
+- **Next.js** — Framework React para aplicações web modernas
+- **TypeScript** — Tipagem estática para maior segurança no desenvolvimento
+- **Drizzle ORM** — ORM TypeScript-first para modelagem e queries no banco
+- **Neon Database** — Banco de dados PostgreSQL serverless
+- **tRPC** — Comunicação typesafe entre frontend e backend
+- **Zod** — Validação de schemas e formulários
+- **React Hook Form** — Gerenciamento de formulários
+- **Tailwind CSS** — Estilização da interface
+- **shadcn/ui** — Componentes reutilizáveis e acessíveis
+- **AWS S3** — Armazenamento de imagens dos produtos
+- **Better Auth** — Autenticação da aplicação
+
+---
+
+## Funcionalidades principais
+
+### Loja pública
+
+A área pública da aplicação representa a vitrine da loja.
+
+Funcionalidades planejadas:
+
+- Página inicial com destaque para coleções
+- Listagem de produtos
+- Página individual do produto
+- Filtros por categoria, coleção, cor, tamanho e preço
+- Seleção de variações do produto
+- Galeria de imagens
+- Carrinho de compras
+- Checkout
+- Página de sucesso do pedido
+
+---
+
+### Dashboard administrativo
+
+O dashboard é a área onde o administrador gerencia a loja.
+
+Funcionalidades planejadas:
+
+- Visão geral da loja
+- Cadastro de produtos
+- Edição de produtos
+- Gerenciamento de categorias
+- Gerenciamento de coleções
+- Controle de estoque
+- Upload de imagens
+- Controle de status do produto
+- Organização de produtos em coleções
+- Gerenciamento de variações por cor e tamanho
+
+---
