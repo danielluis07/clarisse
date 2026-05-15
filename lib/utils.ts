@@ -7,15 +7,17 @@ export function cn(...inputs: ClassValue[]) {
 
 export const getSafeNextPath = (next: string | string[] | undefined) => {
   const value = Array.isArray(next) ? next[0] : next;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || !appUrl) {
     return undefined;
   }
 
   try {
-    const url = new URL(value, process.env.NEXT_PUBLIC_APP_URL);
+    const trustedOrigin = new URL(appUrl).origin;
+    const url = new URL(value, trustedOrigin);
 
-    if (url.origin !== process.env.NEXT_PUBLIC_APP_URL) {
+    if (url.origin !== trustedOrigin) {
       return undefined;
     }
 
