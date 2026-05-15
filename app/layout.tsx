@@ -3,6 +3,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { inter, jost, cormorantGaramond } from "@/fonts";
 import { Toaster } from "@/components/ui/sonner";
+import { TRPCReactProvider } from "@/trpc/client";
 
 export const metadata: Metadata = {
   title: "Clarisse | Moda feminina",
@@ -24,8 +25,10 @@ export default function RootLayout({
         inter.variable,
       )}>
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster />
+        <TRPCReactProvider>
+          {children}
+          <Toaster />
+        </TRPCReactProvider>
       </body>
     </html>
   );
