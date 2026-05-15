@@ -83,6 +83,10 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+[data-section="admin"] {
+  --radius: 0.625rem;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -151,5 +155,12 @@
   [data-section="admin"] h5,
   [data-section="admin"] h6 {
     @apply font-admin;
+  }
+}
+
+@layer utilities {
+  [data-section="store"] [data-slot="input"]:focus-visible,
+  [data-section="auth"] [data-slot="input"]:focus-visible {
+    @apply border-foreground/40 ring-0;
   }
 }
