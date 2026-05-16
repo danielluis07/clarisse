@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { inter, jost, cormorantGaramond } from "@/fonts";
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/client";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "Clarisse | Moda feminina",
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={cn(
         "h-full antialiased font-sans",
         cormorantGaramond.variable,
@@ -26,7 +28,7 @@ export default function RootLayout({
       )}>
       <body className="min-h-full flex flex-col">
         <TRPCReactProvider>
-          {children}
+          <TooltipProvider>{children}</TooltipProvider>
           <Toaster />
         </TRPCReactProvider>
       </body>
