@@ -1,11 +1,24 @@
+import { ConfirmProvider } from "@/providers/confirm-provider";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminHeader } from "@/components/admin/admin-header";
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <main className="p-6 font-admin" data-section="admin">
-      {children}
-    </main>
+    <ConfirmProvider>
+      <SidebarProvider className="font-admin">
+        <AdminSidebar />
+        <SidebarInset>
+          <AdminHeader />
+          <main className="p-4" data-section="admin">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </ConfirmProvider>
   );
 }
