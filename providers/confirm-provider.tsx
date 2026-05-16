@@ -5,8 +5,9 @@ import {
   useContext,
   useCallback,
   useState,
-  ReactNode,
+  type ReactNode,
 } from "react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -79,22 +80,28 @@ export const ConfirmProvider = ({
       {children}
       {confirmState && (
         <Dialog open={true} onOpenChange={handleCancel}>
-          <DialogContent className={className}>
+          <DialogContent className={cn(className, "font-admin")}>
             <DialogHeader>
-              <DialogTitle>{confirmState.title}</DialogTitle>
-              <DialogDescription>{confirmState.message}</DialogDescription>
+              <DialogTitle className="font-admin">
+                {confirmState.title}
+              </DialogTitle>
+              <DialogDescription className="font-admin">
+                {confirmState.message}
+              </DialogDescription>
             </DialogHeader>
             <DialogFooter className="pt-2">
               <Button
                 onClick={handleCancel}
                 variant="outline"
-                disabled={isPending}>
+                disabled={isPending}
+                className="font-admin">
                 Cancelar
               </Button>
               <Button
                 onClick={handleConfirm}
                 variant="destructive"
-                disabled={isPending}>
+                disabled={isPending}
+                className="font-admin">
                 {isPending ? <Spinner className="mx-7" /> : "Confirmar"}
               </Button>
             </DialogFooter>

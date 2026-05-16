@@ -18,13 +18,13 @@ import {
   Users,
 } from "lucide-react";
 import { SidebarItems } from "@/components/admin/sidebar-items";
-import { SiderbarHeader } from "@/components/admin/sidebar-header";
+import { SidebarHeader } from "@/components/admin/sidebar-header";
 import { LogOutButton } from "@/components/admin/log-out-button";
 
 const items = [
   {
     title: "Início",
-    url: "/",
+    url: "/admin",
     icon: <Home className="size-4" />,
   },
   {
@@ -72,7 +72,7 @@ const items = [
 export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon">
-      <SiderbarHeader />
+      <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>

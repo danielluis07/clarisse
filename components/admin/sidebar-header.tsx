@@ -16,7 +16,7 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export const SiderbarHeader = () => {
+export const SidebarHeader = () => {
   const { state, isMobile } = useSidebar();
   const isCollapsed = state === "collapsed" && !isMobile;
 
@@ -30,8 +30,7 @@ export const SiderbarHeader = () => {
           className={cn(
             "flex items-center gap-3 rounded-lg px-2 py-1.5",
             isCollapsed && "justify-center",
-          )}
-        >
+          )}>
           <Skeleton className="size-8 shrink-0 rounded-full" />
           {!isCollapsed && (
             <div className="flex flex-1 flex-col gap-1.5 min-w-0">
@@ -52,8 +51,7 @@ export const SiderbarHeader = () => {
         className={cn(
           "flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-sidebar-accent",
           isCollapsed && "justify-center",
-        )}
-      >
+        )}>
         <Avatar className="shrink-0">
           <AvatarImage
             src={user?.image ?? "/images/user-placeholder.jpg"}

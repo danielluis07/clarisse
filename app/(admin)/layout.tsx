@@ -10,11 +10,11 @@ export default function AdminLayout({
 }) {
   return (
     <ConfirmProvider>
-      <SidebarProvider>
+      <SidebarProvider className="font-admin">
         <AdminSidebar />
         <SidebarInset>
           <AdminHeader />
-          <main className="p-4 font-admin" data-section="admin">
+          <main className="p-4" data-section="admin">
             {children}
           </main>
         </SidebarInset>

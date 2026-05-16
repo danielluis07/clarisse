@@ -2,7 +2,7 @@
 
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { JSX } from "react";
+import type { JSX } from "react";
 
 export const SidebarItems = ({
   item,

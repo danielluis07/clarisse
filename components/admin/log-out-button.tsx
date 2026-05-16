@@ -25,20 +25,25 @@ export const LogOutButton = () => {
     if (confirmed) {
       setPending(true);
 
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            setPending(false);
-            closeConfirm();
-            router.push("/login");
+      try {
+        await authClient.signOut({
+          fetchOptions: {
+            onSuccess: () => {
+              closeConfirm();
+              router.push("/login");
+            },
+            onError: (e) => {
+              console.error("Sign-out error:", e);
+              toast.error("Erro ao sair da conta. Tente novamente.");
+            },
           },
-          onError: (e) => {
-            console.error("Sign-out error:", e);
-            setPending(false);
-            toast.error("Erro ao sair da conta. Tente novamente.");
-          },
-        },
-      });
+        });
+      } catch (e) {
+        console.error("Sign-out error:", e);
+        toast.error("Erro ao sair da conta. Tente novamente.");
+      } finally {
+        setPending(false);
+      }
     }
   };
 
