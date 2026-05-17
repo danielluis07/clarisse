@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { authClient, getErrorMessage } from "@/lib/auth-client";
 import { signUpInput } from "@/validations/auth";
+import { cn } from "@/lib/utils";
 
 type FormValues = z.infer<typeof signUpInput>;
 
@@ -147,7 +148,10 @@ export const RegisterForm = () => {
                   onClick={() => setShowPassword((s) => !s)}
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   tabIndex={-1}
-                  className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground">
+                  className={cn(
+                    "absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
+                    isLoading && "pointer-events-none opacity-60",
+                  )}>
                   {showPassword ? (
                     <EyeOff className="size-4" />
                   ) : (
@@ -209,7 +213,10 @@ export const RegisterForm = () => {
           Já tem uma conta?{" "}
           <Link
             href="/login"
-            className="font-medium text-foreground underline-offset-4 hover:underline">
+            className={cn(
+              "font-medium text-foreground underline-offset-4 hover:underline",
+              isLoading && "pointer-events-none opacity-50",
+            )}>
             Entrar
           </Link>
         </p>

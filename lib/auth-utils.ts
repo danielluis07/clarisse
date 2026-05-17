@@ -1,7 +1,16 @@
+import "server-only";
+
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { auth } from "@/lib/auth";
 import type { Session, UserRole } from "@/types/auth";
+
+export const getCurrentSession = cache(async (): Promise<Session | null> => {
+  return auth.api.getSession({
+    headers: await headers(),
+  });
+});
 
 /**
  * Verify if the user is authenticated
@@ -10,9 +19,7 @@ import type { Session, UserRole } from "@/types/auth";
  * @returns User session if authenticated
  */
 export const requireAuth = async (): Promise<Session> => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getCurrentSession();
 
   if (!session) {
     redirect("/login");
