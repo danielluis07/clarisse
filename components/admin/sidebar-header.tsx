@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
-import Link from "next/link";
 
 function getInitials(name: string) {
   return name
@@ -45,11 +44,9 @@ export const SidebarHeader = () => {
 
   return (
     <Header>
-      <Link
-        href="/admin"
-        aria-label="Admin"
+      <div
         className={cn(
-          "flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-sidebar-accent",
+          "flex items-center gap-3 px-2 py-1.5",
           isCollapsed && "justify-center",
         )}>
         <Avatar className="shrink-0">
@@ -71,7 +68,7 @@ export const SidebarHeader = () => {
             </span>
           </div>
         )}
-      </Link>
+      </div>
     </Header>
   );
 };

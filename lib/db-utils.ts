@@ -14,3 +14,7 @@ export const timestamps = () => ({
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+export const escapeLikeWildcards = (value: string): string => {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+};
