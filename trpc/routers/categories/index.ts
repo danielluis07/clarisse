@@ -88,14 +88,16 @@ export const categoriesRouter = createTRPCRouter({
     }[sortBy];
 
     const orderBy =
-      sortOrder === "asc" ? asc(orderByColumn) : desc(orderByColumn);
+      sortOrder === "asc"
+        ? [asc(orderByColumn), asc(categories.id)]
+        : [desc(orderByColumn), desc(categories.id)];
 
     const [data, total] = await Promise.all([
       db
         .select(categorySelect)
         .from(categories)
         .where(whereClause)
-        .orderBy(orderBy)
+        .orderBy(...orderBy)
         .limit(perPage)
         .offset(offset),
       db
@@ -222,6 +224,10 @@ export const categoriesRouter = createTRPCRouter({
 
         return deletedRows;
       } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         console.error("Erro ao deletar categorias:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

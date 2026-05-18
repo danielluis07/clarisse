@@ -62,7 +62,26 @@ export const getCategoryInput = z.object({
 
 export const createCategoryInput = categoryBaseInput;
 
-export const updateCategoryInput = categoryBaseInput.partial().extend({
+export const categoryUpdateFields = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Nome da categoria é obrigatório")
+    .max(120, "Nome da categoria deve ter no máximo 120 caracteres")
+    .optional(),
+  description: optionalText,
+  imageId: optionalText,
+  isActive: z.boolean().optional(),
+  displayOrder: z
+    .number()
+    .int("Ordem de exibição deve ser um número inteiro")
+    .min(0, "Ordem de exibição não pode ser negativa")
+    .optional(),
+  seoTitle: optionalText,
+  seoDescription: optionalText,
+});
+
+export const updateCategoryInput = categoryUpdateFields.extend({
   id: z.string().min(1, "ID da categoria é obrigatório"),
 });
 

@@ -70,6 +70,7 @@ export const CategoriesView = () => {
         <DataTable
           columns={columns}
           data={data}
+          getRowId={(category) => String(category.id)}
           manualPagination
           manualSorting
           manualFiltering
