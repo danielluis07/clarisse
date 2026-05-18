@@ -42,7 +42,7 @@ interface DataTableProps<TData, TValue> {
   searchKey?: string;
   className?: string;
   getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
-  onDelete?: (rows: Row<TData>[]) => void;
+  onDelete?: (rows: Row<TData>[]) => void | Promise<void>;
 }
 
 export function DataTable<TData, TValue>({
@@ -64,7 +64,7 @@ export function DataTable<TData, TValue>({
     [],
   );
 
-  const { confirm, setPending } = useConfirm();
+  const { confirm, closeConfirm, setPending } = useConfirm();
 
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -95,11 +95,11 @@ export function DataTable<TData, TValue>({
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const showSimpleSearch = simpleSearch && searchKey;
   const showBulkDelete = onDelete && selectedRows.length > 0;
-  const showToolbar = showSimpleSearch || showBulkDelete;
+  const reserveToolbar = showSimpleSearch || !!onDelete;
 
   return (
     <>
-      {showToolbar && (
+      {reserveToolbar && (
         <div
           className={cn(
             "flex items-center justify-between py-4 min-h-18",
@@ -131,10 +131,14 @@ export function DataTable<TData, TValue>({
                   "Esta ação não pode ser desfeita.",
                 );
 
-                if (confirmed) {
+                if (!confirmed) return;
+
+                try {
                   setPending(true);
-                  onDelete(selectedRows);
+                  await onDelete(selectedRows);
                   table.resetRowSelection();
+                } finally {
+                  closeConfirm();
                 }
               }}
               className="ml-auto">

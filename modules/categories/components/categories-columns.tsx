@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Link from "next/link";
+import { CategoriesCellAction } from "@/modules/categories/components/categories-cell-action";
 
 const TruncatedText = ({
   value,
@@ -155,6 +156,14 @@ export const columns: ColumnDef<CategoryOutput>[] = [
     cell: ({ row }) => {
       const updatedAt = row.original.updatedAt;
       return format(updatedAt, "dd/MM/yyyy", { locale: ptBR });
+    },
+  },
+  {
+    id: "actions",
+    header: "Ações",
+    cell: ({ row }) => {
+      const category = row.original;
+      return <CategoriesCellAction id={category.id} name={category.name} />;
     },
   },
 ];

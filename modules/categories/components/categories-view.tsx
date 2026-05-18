@@ -11,11 +11,23 @@ import {
   CATEGORY_FILTER_KEYS,
   useCategoriesActiveFiltersCount,
 } from "@/modules/categories/components/categories-filters";
-import { useCategoriesSuspense } from "@/modules/categories/hooks";
+import {
+  useCategoriesSuspense,
+  useDeleteCategories,
+} from "@/modules/categories/hooks";
+import type { CategoryOutput } from "@/modules/categories/types";
 import { parseCategoriesSearchParams } from "@/modules/categories/utils";
+import type { Row } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+
+const getErrorMessage = (error: unknown) => {
+  return error instanceof Error
+    ? error.message
+    : "Não foi possível excluir as categorias.";
+};
 
 export const CategoriesView = () => {
   const searchParams = useSearchParams();
@@ -28,6 +40,22 @@ export const CategoriesView = () => {
 
   const activeFiltersCount = useCategoriesActiveFiltersCount();
   const { clearFilters } = useURLFilters();
+  const deleteCategories = useDeleteCategories();
+
+  const handleDeleteRows = async (rows: Row<CategoryOutput>[]) => {
+    const ids = rows.map((row) => row.original.id);
+
+    try {
+      await deleteCategories.mutateAsync({ ids });
+      toast.success(
+        ids.length === 1
+          ? "Categoria excluída com sucesso."
+          : "Categorias excluídas com sucesso.",
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,14 +77,6 @@ export const CategoriesView = () => {
           onClearFilters={() => clearFilters([...CATEGORY_FILTER_KEYS])}
           actions={
             <div className="flex flex-wrap items-center gap-3">
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {pagination.total}
-                </span>{" "}
-                {pagination.total === 1
-                  ? "categoria cadastrada"
-                  : "categorias cadastradas"}
-              </div>
               <Button asChild size="lg">
                 <Link href="/admin/categories/create">
                   <Plus data-icon="inline-start" />
@@ -74,6 +94,7 @@ export const CategoriesView = () => {
           manualPagination
           manualSorting
           manualFiltering
+          onDelete={handleDeleteRows}
         />
 
         <TablePagination

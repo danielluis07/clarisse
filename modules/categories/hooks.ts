@@ -64,9 +64,12 @@ export const useDeleteCategory = () => {
 
   return useMutation(
     trpc.categories.delete.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (category) => {
         queryClient.invalidateQueries({
           queryKey: trpc.categories.list.queryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: trpc.categories.get.queryKey({ id: category.id }),
         });
       },
     }),

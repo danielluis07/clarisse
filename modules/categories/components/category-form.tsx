@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
@@ -31,10 +31,12 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   useCategorySuspense,
   useCreateCategory,
+  useDeleteCategory,
   useUpdateCategory,
 } from "@/modules/categories/hooks";
 import type { CategoryOutput } from "@/modules/categories/types";
 import { createCategoryInput } from "@/modules/categories/validations";
+import { useConfirm } from "@/providers/confirm-provider";
 
 const categoryFormSchema = createCategoryInput.omit({ imageId: true });
 
@@ -56,6 +58,12 @@ const getErrorMessage = (error: unknown) => {
     : "Não foi possível salvar a categoria.";
 };
 
+const getDeleteErrorMessage = (error: unknown) => {
+  return error instanceof Error
+    ? error.message
+    : "Não foi possível excluir a categoria.";
+};
+
 export const CategoryForm = ({ id }: { id?: string }) => {
   if (id) {
     return <UpdateCategoryForm id={id} />;
@@ -72,7 +80,7 @@ const CreateCategoryForm = () => {
     try {
       // Category image upload will be wired later through imageId once media
       // selection/upload is implemented.
-      const category = await createCategory.mutateAsync(values);
+      await createCategory.mutateAsync(values);
 
       toast.success("Categoria criada com sucesso.");
       router.push(`/admin/categories`);
@@ -150,6 +158,9 @@ const CategoryFormBody = ({
     resolver: zodResolver(categoryFormSchema),
     defaultValues,
   });
+  const router = useRouter();
+  const { confirm, closeConfirm, setPending } = useConfirm();
+  const deleteCategory = useDeleteCategory();
 
   const submitLabel =
     mode === "create" ? "Criar categoria" : "Salvar alterações";
@@ -167,6 +178,29 @@ const CategoryFormBody = ({
       reset(getDefaultValues(result as CategoryOutput));
     }
   });
+
+  const handleDelete = async () => {
+    if (!category) return;
+
+    const confirmed = await confirm(
+      "Excluir categoria?",
+      `A categoria "${category.name}" será removida permanentemente. Esta ação não pode ser desfeita.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setPending(true);
+      await deleteCategory.mutateAsync({ id: category.id });
+      toast.success("Categoria excluída com sucesso.");
+      router.push("/admin/categories");
+      router.refresh();
+    } catch (error) {
+      toast.error(getDeleteErrorMessage(error));
+    } finally {
+      closeConfirm();
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -326,14 +360,30 @@ const CategoryFormBody = ({
             </FieldGroup>
           </CardContent>
 
-          <CardFooter className="justify-end gap-2">
-            <Button asChild variant="outline" disabled={isSubmitting}>
-              <Link href="/admin/categories">Cancelar</Link>
-            </Button>
-            <Button type="submit" isLoading={isSubmitting}>
-              {!isSubmitting && <Save data-icon="inline-start" />}
-              {submitLabel}
-            </Button>
+          <CardFooter className="flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+            {category ? (
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={isSubmitting || deleteCategory.isPending}
+                onClick={handleDelete}
+                className="sm:mr-auto">
+                <Trash2 data-icon="inline-start" />
+                Excluir categoria
+              </Button>
+            ) : (
+              <span aria-hidden className="hidden sm:block" />
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button asChild variant="outline" disabled={isSubmitting}>
+                <Link href="/admin/categories">Cancelar</Link>
+              </Button>
+              <Button type="submit" isLoading={isSubmitting}>
+                {!isSubmitting && <Save data-icon="inline-start" />}
+                {submitLabel}
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </form>
