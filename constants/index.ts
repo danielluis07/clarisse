@@ -3,6 +3,11 @@ export const PAGINATION = {
   DEFAULT_PER_PAGE: 10,
 };
 
+export const MAX_FILE_SIZE_BYTES = {
+  label: "3MB",
+  value: 3 * 1024 * 1024,
+} as const;
+
 export const BRAZILIAN_STATES = [
   "AC",
   "AL",
