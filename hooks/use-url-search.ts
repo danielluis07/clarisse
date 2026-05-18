@@ -23,7 +23,7 @@ export function useURLSearch(debounceMs = 500) {
       params.delete("search");
     }
 
-    params.set("page", "1");
+    params.delete("page");
 
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });

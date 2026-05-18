@@ -3,7 +3,7 @@
 import { useCustomersSuspense } from "@/modules/customers/hooks";
 import { parseCustomersSearchParams } from "@/modules/customers/utils";
 import { useSearchParams } from "next/navigation";
-import { columns } from "@/components/admin/customers/cutomers-columns";
+import { columns } from "@/modules/customers/components/customers-columns";
 import { DataTable } from "@/components/ui/data-table";
 import { TableToolbar } from "@/components/admin/table-toolbar";
 import { TablePagination } from "@/components/admin/table-pagination";
@@ -11,7 +11,7 @@ import {
   CUSTOMER_FILTER_KEYS,
   CustomersFilters,
   useCustomersActiveFiltersCount,
-} from "@/components/admin/customers/customers-filters";
+} from "@/modules/customers/components/customers-filters";
 import { useURLFilters } from "@/hooks/use-url-filters";
 
 export const CustomersView = () => {
@@ -56,7 +56,13 @@ export const CustomersView = () => {
           }
         />
 
-        <DataTable columns={columns} data={data} />
+        <DataTable
+          columns={columns}
+          data={data}
+          manualPagination
+          manualSorting
+          manualFiltering
+        />
 
         <TablePagination
           page={pagination.page}

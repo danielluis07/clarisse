@@ -22,14 +22,14 @@ export const columns: ColumnDef<CustomerOutput>[] = [
           (table.getIsSomePageRowsSelected() && "indeterminate")
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label="Selecionar todos"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label="Selecionar linha"
       />
     ),
     enableSorting: false,
@@ -40,25 +40,29 @@ export const columns: ColumnDef<CustomerOutput>[] = [
     header: "Nome",
     cell: ({ row }) => {
       const name = row.original.name;
+      const customerHref = `/admin/customers/${row.original.id}`;
+      const customerLink = (
+        <Link className="font-semibold" href={customerHref}>
+          <span
+            className={
+              name.length > 30 ? "inline-block max-w-24 truncate" : ""
+            }>
+            {name}
+          </span>
+        </Link>
+      );
+
       return (
         <>
           {name.length > 30 ? (
             <Tooltip>
-              <TooltipTrigger className="cursor-pointer" asChild>
-                <Link
-                  className="w-24 truncate cursor-default font-semibold"
-                  href={`/admin/customers/${row.original.id}`}>
-                  <span>{name}</span>
-                </Link>
-              </TooltipTrigger>
+              <TooltipTrigger asChild>{customerLink}</TooltipTrigger>
               <TooltipContent>
                 <span>{name}</span>
               </TooltipContent>
             </Tooltip>
           ) : (
-            <Link href={`/admin/customers/${row.original.id}`}>
-              <span className="font-semibold">{name}</span>
-            </Link>
+            customerLink
           )}
         </>
       );

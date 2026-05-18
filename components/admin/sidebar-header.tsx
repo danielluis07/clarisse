@@ -45,9 +45,8 @@ export const SidebarHeader = () => {
   return (
     <Header>
       <div
-        aria-label="Admin"
         className={cn(
-          "flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-sidebar-accent",
+          "flex items-center gap-3 px-2 py-1.5",
           isCollapsed && "justify-center",
         )}>
         <Avatar className="shrink-0">

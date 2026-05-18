@@ -4,7 +4,7 @@ import { parseCustomersSearchParams } from "@/modules/customers/utils";
 import { HydrateClient } from "@/trpc/server";
 import { ErrorBoundary } from "react-error-boundary";
 import { Suspense } from "react";
-import { CustomersView } from "@/components/admin/customers/customers-view";
+import { CustomersView } from "@/modules/customers/components/customers-view";
 
 const CustomersPage = async ({
   searchParams,

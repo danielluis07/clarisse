@@ -8,6 +8,7 @@
     "start": "bun --bun next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed:customers": "bun --bun scripts/seed-customers.ts",
     "lint": "eslint"
   },
   "dependencies": {

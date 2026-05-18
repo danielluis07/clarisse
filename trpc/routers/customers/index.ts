@@ -7,20 +7,29 @@ import {
   getCustomerInput,
   listCustomersInput,
 } from "@/modules/customers/validations";
+import { escapeLikeWildcards } from "@/lib/db-utils";
 
 export const customersRouter = createTRPCRouter({
   list: adminProcedure.input(listCustomersInput).query(async ({ input }) => {
-    const { page, perPage, search, sortBy, sortOrder, createdAtFrom, createdAtTo } =
-      input;
+    const {
+      page,
+      perPage,
+      search,
+      sortBy,
+      sortOrder,
+      createdAtFrom,
+      createdAtTo,
+    } = input;
     const offset = (page - 1) * perPage;
 
     const conditions = [];
 
     if (search) {
+      const escapedSearch = escapeLikeWildcards(search);
       conditions.push(
         or(
-          ilike(customers.name, `%${search}%`),
-          ilike(customers.email, `%${search}%`),
+          ilike(customers.name, `%${escapedSearch}%`),
+          ilike(customers.email, `%${escapedSearch}%`),
         ),
       );
     }
@@ -85,6 +94,7 @@ export const customersRouter = createTRPCRouter({
         name: customers.name,
         email: customers.email,
         createdAt: customers.createdAt,
+        updatedAt: customers.updatedAt,
       })
       .from(customers)
       .where(eq(customers.id, id));

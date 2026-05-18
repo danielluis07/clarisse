@@ -20,6 +20,10 @@ type SortPreset = {
   sortOrder: "asc" | "desc";
 };
 
+const DEFAULT_SORT_BY = "createdAt";
+const DEFAULT_SORT_ORDER = "desc";
+const DEFAULT_SORT = `${DEFAULT_SORT_BY}:${DEFAULT_SORT_ORDER}`;
+
 const SORT_PRESETS: SortPreset[] = [
   {
     value: "createdAt:desc",
@@ -42,7 +46,13 @@ const SORT_PRESETS: SortPreset[] = [
   },
 ];
 
-const DEFAULT_SORT = "createdAt:desc";
+const getSortValue = (sortBy?: string | null, sortOrder?: string | null) => {
+  return `${sortBy ?? DEFAULT_SORT_BY}:${sortOrder ?? DEFAULT_SORT_ORDER}`;
+};
+
+const isDefaultSort = (sortBy?: string | null, sortOrder?: string | null) => {
+  return getSortValue(sortBy, sortOrder) === DEFAULT_SORT;
+};
 
 type DatePreset = {
   value: string;
@@ -58,33 +68,49 @@ const DATE_PRESETS: DatePreset[] = [
   { value: "365d", label: "Último ano", days: 365 },
 ];
 
-const daysAgoISO = (days: number) => {
+const toDateParam = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const daysAgoDateParam = (days: number) => {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() - days);
-  return date.toISOString();
+
+  return toDateParam(date);
 };
 
 const matchDatePreset = (createdAtFrom: string | undefined): DatePreset => {
   if (!createdAtFrom) return DATE_PRESETS[0];
+
   const target = new Date(createdAtFrom).getTime();
-  // Find preset whose computed date is within ~1 hour of the URL value.
-  const tolerance = 60 * 60 * 1000;
+
+  // Find preset whose computed date is within 1 day of the URL value so the
+  // selected preset remains stable across later renders or after midnight.
+  const tolerance = 24 * 60 * 60 * 1000;
+
   for (const preset of DATE_PRESETS) {
     if (preset.days === null) continue;
-    const presetMs = new Date(daysAgoISO(preset.days)).getTime();
-    if (Math.abs(presetMs - target) < tolerance) return preset;
+
+    const presetMs = new Date(daysAgoDateParam(preset.days)).getTime();
+
+    if (Math.abs(presetMs - target) <= tolerance) return preset;
   }
+
   return { value: "custom", label: "Período personalizado", days: null };
 };
 
 export const CustomersFilters = () => {
   const { getFilter, setFilters } = useURLFilters();
 
-  const currentSortBy = getFilter("sortBy") ?? "createdAt";
-  const currentSortOrder = getFilter("sortOrder") ?? "desc";
-  const currentSort = `${currentSortBy}:${currentSortOrder}`;
-  const sortIsDefault = currentSort === DEFAULT_SORT;
+  const currentSortBy = getFilter("sortBy");
+  const currentSortOrder = getFilter("sortOrder");
+  const currentSort = getSortValue(currentSortBy, currentSortOrder);
+  const sortIsDefault = isDefaultSort(currentSortBy, currentSortOrder);
 
   const createdAtFrom = getFilter("createdAtFrom");
   const activeDate = matchDatePreset(createdAtFrom);
@@ -92,18 +118,25 @@ export const CustomersFilters = () => {
 
   const handleSortChange = (value: string) => {
     const preset = SORT_PRESETS.find((p) => p.value === value);
+
     if (!preset) return;
+
     setFilters({
-      sortBy: preset.sortBy === "createdAt" ? null : preset.sortBy,
-      sortOrder: preset.sortOrder === "desc" ? null : preset.sortOrder,
+      sortBy: preset.sortBy === DEFAULT_SORT_BY ? null : preset.sortBy,
+      sortOrder:
+        preset.sortOrder === DEFAULT_SORT_ORDER ? null : preset.sortOrder,
     });
   };
 
   const handleDateChange = (value: string) => {
     const preset = DATE_PRESETS.find((p) => p.value === value);
+
     if (!preset) return;
+
     setFilters({
-      createdAtFrom: preset.days === null ? null : daysAgoISO(preset.days),
+      createdAtFrom:
+        preset.days === null ? null : daysAgoDateParam(preset.days),
+      createdAtTo: null,
     });
   };
 
@@ -112,21 +145,21 @@ export const CustomersFilters = () => {
       <Select value={activeDate.value} onValueChange={handleDateChange}>
         <SelectTrigger
           aria-label="Filtrar por período de cadastro"
-          className={cn(
-            "h-9 min-w-48",
-            !dateIsDefault && "border-primary/40",
-          )}>
+          className={cn("h-9 min-w-48", !dateIsDefault && "border-primary/40")}>
           <CalendarRange className="size-3.5 text-muted-foreground" />
           <SelectValue placeholder="Período" />
         </SelectTrigger>
+
         <SelectContent position="popper" align="start">
           <SelectGroup>
             <SelectLabel>Cadastrado em</SelectLabel>
+
             {DATE_PRESETS.map((preset) => (
               <SelectItem key={preset.value} value={preset.value}>
                 {preset.label}
               </SelectItem>
             ))}
+
             {activeDate.value === "custom" && (
               <SelectItem value="custom" disabled>
                 {activeDate.label}
@@ -139,16 +172,15 @@ export const CustomersFilters = () => {
       <Select value={currentSort} onValueChange={handleSortChange}>
         <SelectTrigger
           aria-label="Ordenar clientes"
-          className={cn(
-            "h-9 min-w-48",
-            !sortIsDefault && "border-primary/40",
-          )}>
+          className={cn("h-9 min-w-48", !sortIsDefault && "border-primary/40")}>
           <ArrowUpDown className="size-3.5 text-muted-foreground" />
           <SelectValue placeholder="Ordenar por" />
         </SelectTrigger>
+
         <SelectContent position="popper" align="start">
           <SelectGroup>
             <SelectLabel>Ordenar por</SelectLabel>
+
             {SORT_PRESETS.map((preset) => (
               <SelectItem key={preset.value} value={preset.value}>
                 {preset.label}
@@ -170,15 +202,19 @@ export const CUSTOMER_FILTER_KEYS = [
 
 export const useCustomersActiveFiltersCount = () => {
   const { getFilter } = useURLFilters();
+
   let count = 0;
+
   const sortBy = getFilter("sortBy");
   const sortOrder = getFilter("sortOrder");
-  if (
-    (sortBy && sortBy !== "createdAt") ||
-    (sortOrder && sortOrder !== "desc")
-  ) {
+
+  if (!isDefaultSort(sortBy, sortOrder)) {
     count += 1;
   }
-  if (getFilter("createdAtFrom") || getFilter("createdAtTo")) count += 1;
+
+  if (getFilter("createdAtFrom") || getFilter("createdAtTo")) {
+    count += 1;
+  }
+
   return count;
 };

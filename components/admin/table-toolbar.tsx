@@ -6,16 +6,6 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
-type TableToolbarProps = {
-  searchPlaceholder?: string;
-  showSearch?: boolean;
-  filters?: ReactNode;
-  actions?: ReactNode;
-  activeFiltersCount?: number;
-  onClearFilters?: () => void;
-  className?: string;
-};
-
 export const TableToolbar = ({
   searchPlaceholder,
   showSearch = true,
@@ -24,7 +14,15 @@ export const TableToolbar = ({
   activeFiltersCount = 0,
   onClearFilters,
   className,
-}: TableToolbarProps) => {
+}: {
+  searchPlaceholder?: string;
+  showSearch?: boolean;
+  filters?: ReactNode;
+  actions?: ReactNode;
+  activeFiltersCount?: number;
+  onClearFilters?: () => void;
+  className?: string;
+}) => {
   const showReset = activeFiltersCount > 0 && onClearFilters;
 
   return (
@@ -46,7 +44,7 @@ export const TableToolbar = ({
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="h-9 text-muted-foreground hover:text-foreground">
+            className="h-9 text-muted-foreground hover:text-foreground rounded-md">
             <X className="size-3.5" />
             Limpar
             <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px] font-medium leading-4 text-foreground">

@@ -36,6 +36,9 @@ interface DataTableProps<TData, TValue> {
   isLoading?: boolean;
   simplePagination?: boolean;
   simpleSearch?: boolean;
+  manualPagination?: boolean;
+  manualSorting?: boolean;
+  manualFiltering?: boolean;
   searchKey?: string;
   className?: string;
   getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
@@ -48,6 +51,9 @@ export function DataTable<TData, TValue>({
   isLoading,
   simplePagination = false,
   simpleSearch = false,
+  manualPagination = false,
+  manualSorting = false,
+  manualFiltering = false,
   searchKey,
   className,
   getRowId,
@@ -68,12 +74,17 @@ export function DataTable<TData, TValue>({
     columns,
     getRowId,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination,
+    getPaginationRowModel: manualPagination
+      ? undefined
+      : getPaginationRowModel(),
     onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
+    manualSorting,
+    getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
     onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
+    manualFiltering,
+    getFilteredRowModel: manualFiltering ? undefined : getFilteredRowModel(),
     state: {
       sorting,
       columnFilters,
