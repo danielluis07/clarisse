@@ -10,6 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Link from "next/link";
 
 const TruncatedText = ({
   value,
@@ -66,15 +67,32 @@ export const columns: ColumnDef<CategoryOutput>[] = [
     header: "Categoria",
     cell: ({ row }) => {
       const category = row.original;
+      const categoryHref = `/admin/categories/${category.id}`;
+      const categoryLink = (
+        <Link className="font-semibold" href={categoryHref}>
+          <span
+            className={
+              category.name.length > 38
+                ? "inline-block max-w-40 truncate"
+                : undefined
+            }>
+            {category.name}
+          </span>
+        </Link>
+      );
 
       return (
         <div className="flex min-w-40 flex-col gap-1">
-          <span className="font-semibold">
-            <TruncatedText
-              value={category.name}
-              className="inline-block max-w-40 truncate"
-            />
-          </span>
+          {category.name.length > 38 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>{categoryLink}</TooltipTrigger>
+              <TooltipContent>
+                <span>{category.name}</span>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            categoryLink
+          )}
           <span className="max-w-40 truncate text-xs text-muted-foreground">
             /{category.slug}
           </span>

@@ -9,3 +9,7 @@ export const prefetchCategories = async (params: Partial<CategoriesInput>) => {
     trpc.categories.list.queryOptions(normalizeCategoriesParams(params)),
   );
 };
+
+export const prefetchCategory = async (id: string) => {
+  return prefetch(trpc.categories.get.queryOptions({ id }));
+};

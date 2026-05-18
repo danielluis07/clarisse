@@ -40,6 +40,24 @@ export const useCreateCategory = () => {
   );
 };
 
+export const useUpdateCategory = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.categories.update.mutationOptions({
+      onSuccess: (category) => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.categories.list.queryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: trpc.categories.get.queryKey({ id: category.id }),
+        });
+      },
+    }),
+  );
+};
+
 export const useDeleteCategory = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
