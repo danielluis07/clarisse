@@ -42,6 +42,7 @@ export const TableToolbar = ({
         {showReset && (
           <Button
             variant="ghost"
+            type="button"
             size="sm"
             onClick={onClearFilters}
             className="h-9 text-muted-foreground hover:text-foreground rounded-md">
