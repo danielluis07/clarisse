@@ -1,0 +1,124 @@
+import { TRPCError } from "@trpc/server";
+import { eq, inArray } from "drizzle-orm";
+
+import { db } from "@/db";
+import { mediaAssets } from "@/db/schema";
+import {
+  deleteMediaAssetsByIds,
+  parseS3KeyFromUrl,
+} from "@/lib/media-server";
+import { client } from "@/lib/s3";
+import {
+  createPresignedUploadInput,
+  deleteAssetInput,
+  getAssetInput,
+  getAssetsByIdsInput,
+  registerAssetInput,
+} from "@/modules/media/validations";
+import { adminProcedure, createTRPCRouter } from "@/trpc/init";
+
+const sanitizeFilename = (filename: string) =>
+  filename.replace(/^.*[\\/]/, "").replace(/[^a-zA-Z0-9._-]/g, "_");
+
+const buildPublicUrl = (key: string) =>
+  `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+export const mediaRouter = createTRPCRouter({
+  getById: adminProcedure.input(getAssetInput).query(async ({ input }) => {
+    const [asset] = await db
+      .select()
+      .from(mediaAssets)
+      .where(eq(mediaAssets.id, input.id));
+
+    if (!asset) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Asset não encontrado",
+      });
+    }
+
+    return asset;
+  }),
+
+  getByIds: adminProcedure
+    .input(getAssetsByIdsInput)
+    .query(async ({ input }) => {
+      if (!input.ids.length) return [];
+      return db
+        .select()
+        .from(mediaAssets)
+        .where(inArray(mediaAssets.id, input.ids));
+    }),
+
+  createPresignedUpload: adminProcedure
+    .input(createPresignedUploadInput)
+    .mutation(async ({ input }) => {
+      const sanitized = sanitizeFilename(input.filename);
+      const key = `${input.folder}/${crypto.randomUUID()}-${sanitized}`;
+
+      try {
+        const uploadUrl = client.file(key).presign({
+          method: "PUT",
+          expiresIn: 3600,
+          type: input.mimeType,
+        });
+
+        return {
+          uploadUrl,
+          key,
+          publicUrl: buildPublicUrl(key),
+        };
+      } catch (error) {
+        console.error("Erro ao gerar URL de upload:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Não foi possível gerar a URL de upload",
+        });
+      }
+    }),
+
+  registerAsset: adminProcedure
+    .input(registerAssetInput)
+    .mutation(async ({ ctx, input }) => {
+      const key = parseS3KeyFromUrl(input.url);
+      if (!key) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "URL não pertence ao bucket configurado",
+        });
+      }
+
+      const [asset] = await db
+        .insert(mediaAssets)
+        .values({
+          key: input.key,
+          url: input.url,
+          bucket: process.env.AWS_BUCKET_NAME ?? null,
+          filename: input.filename,
+          mimeType: input.mimeType,
+          type: "image",
+          sizeBytes: input.sizeBytes,
+          width: input.width ?? null,
+          height: input.height ?? null,
+          altText: input.altText ?? null,
+          createdById: ctx.adminId,
+        })
+        .returning();
+
+      if (!asset) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Não foi possível registrar o asset",
+        });
+      }
+
+      return asset;
+    }),
+
+  deleteAsset: adminProcedure
+    .input(deleteAssetInput)
+    .mutation(async ({ input }) => {
+      await deleteMediaAssetsByIds([input.id]);
+      return { id: input.id };
+    }),
+});

@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { escapeLikeWildcards } from "@/lib/db-utils";
+import { deleteMediaAssetsByIds } from "@/lib/media-server";
 import {
   createCategoryInput,
   deleteCategoryInput,
@@ -192,6 +193,10 @@ export const categoriesRouter = createTRPCRouter({
         });
       }
 
+      if (data.imageId) {
+        await deleteMediaAssetsByIds([data.imageId]);
+      }
+
       return data;
     }),
 
@@ -220,6 +225,13 @@ export const categoriesRouter = createTRPCRouter({
             code: "NOT_FOUND",
             message: "Categorias não encontradas",
           });
+        }
+
+        const imageIds = deletedRows
+          .map((row) => row.imageId)
+          .filter((id): id is string => !!id);
+        if (imageIds.length) {
+          await deleteMediaAssetsByIds(imageIds);
         }
 
         return deletedRows;
