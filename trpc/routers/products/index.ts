@@ -10,6 +10,7 @@ import {
   ilike,
   inArray,
   lte,
+  max,
   or,
   sql,
 } from "drizzle-orm";
@@ -663,9 +664,16 @@ export const productsRouter = createTRPCRouter({
       await assertProductExists(input.productId);
 
       try {
+        const [{ maxOrder }] = await db
+          .select({ maxOrder: max(productVariants.displayOrder) })
+          .from(productVariants)
+          .where(eq(productVariants.productId, input.productId));
+
+        const nextIndex = maxOrder != null ? maxOrder + 1 : 0;
+
         const [variant] = await db
           .insert(productVariants)
-          .values(normalizeVariantValues(input.productId, input, 0))
+          .values(normalizeVariantValues(input.productId, input, nextIndex))
           .returning(productVariantSelect);
 
         if (!variant) {
@@ -808,46 +816,58 @@ export const productsRouter = createTRPCRouter({
             });
           }
 
-          const saved = [];
+          const toInsert: ReturnType<typeof normalizeVariantValues>[] = [];
+          const toUpdate: (ReturnType<typeof normalizeVariantValues> & {
+            id: string;
+          })[] = [];
+
           for (const [index, variantInput] of input.variants.entries()) {
-            const valuesToSave = normalizeVariantValues(
+            const values = normalizeVariantValues(
               input.productId,
               variantInput,
               index,
             );
-
             if (variantInput.id) {
-              const [variant] = await tx
-                .update(productVariants)
-                .set({
-                  sku: valuesToSave.sku,
-                  colorName: valuesToSave.colorName,
-                  colorHex: valuesToSave.colorHex,
-                  size: valuesToSave.size,
-                  priceCents: valuesToSave.priceCents,
-                  compareAtPriceCents: valuesToSave.compareAtPriceCents,
-                  stockQuantity: valuesToSave.stockQuantity,
-                  lowStockThreshold: valuesToSave.lowStockThreshold,
-                  weightGrams: valuesToSave.weightGrams,
-                  isActive: valuesToSave.isActive,
-                  displayOrder: valuesToSave.displayOrder,
-                })
-                .where(
-                  and(
-                    eq(productVariants.id, variantInput.id),
-                    eq(productVariants.productId, input.productId),
-                  ),
-                )
-                .returning(productVariantSelect);
-              if (variant) saved.push(variant);
+              toUpdate.push({ id: variantInput.id, ...values });
             } else {
-              const [variant] = await tx
-                .insert(productVariants)
-                .values(valuesToSave)
-                .returning(productVariantSelect);
-              if (variant) saved.push(variant);
+              toInsert.push(values);
             }
           }
+
+          const insertedRows =
+            toInsert.length > 0
+              ? await tx
+                  .insert(productVariants)
+                  .values(toInsert)
+                  .returning(productVariantSelect)
+              : [];
+
+          const updatedRows =
+            toUpdate.length > 0
+              ? await tx
+                  .insert(productVariants)
+                  .values(toUpdate)
+                  .onConflictDoUpdate({
+                    target: productVariants.id,
+                    set: {
+                      sku: sql`excluded.sku`,
+                      colorName: sql`excluded.color_name`,
+                      colorHex: sql`excluded.color_hex`,
+                      size: sql`excluded.size`,
+                      priceCents: sql`excluded.price_cents`,
+                      compareAtPriceCents: sql`excluded.compare_at_price_cents`,
+                      stockQuantity: sql`excluded.stock_quantity`,
+                      lowStockThreshold: sql`excluded.low_stock_threshold`,
+                      weightGrams: sql`excluded.weight_grams`,
+                      isActive: sql`excluded.is_active`,
+                      displayOrder: sql`excluded.display_order`,
+                      updatedAt: sql`now()`,
+                    },
+                  })
+                  .returning(productVariantSelect)
+              : [];
+
+          const saved = [...insertedRows, ...updatedRows];
 
           const idsToDelete = [...existingIds].filter(
             (id) => !incomingIds.has(id),
@@ -899,30 +919,38 @@ export const productsRouter = createTRPCRouter({
         });
       }
 
-      const [{ count: variantCount }] = await db
-        .select({ count: count() })
-        .from(productVariants)
-        .where(eq(productVariants.productId, existing.productId));
-
-      if (variantCount <= 1) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Produto deve manter pelo menos uma variante",
-        });
-      }
-
       try {
-        const [variant] = await db
-          .delete(productVariants)
-          .where(eq(productVariants.id, input.id))
-          .returning(productVariantSelect);
+        const variant = await db.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT id FROM ${productVariants} WHERE ${productVariants.productId} = ${existing.productId} FOR UPDATE`,
+          );
 
-        if (!variant) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Variante não encontrada",
-          });
-        }
+          const [{ count: variantCount }] = await tx
+            .select({ count: count() })
+            .from(productVariants)
+            .where(eq(productVariants.productId, existing.productId));
+
+          if (variantCount <= 1) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Produto deve manter pelo menos uma variante",
+            });
+          }
+
+          const [deleted] = await tx
+            .delete(productVariants)
+            .where(eq(productVariants.id, input.id))
+            .returning(productVariantSelect);
+
+          if (!deleted) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Variante não encontrada",
+            });
+          }
+
+          return deleted;
+        });
 
         return {
           ...variant,

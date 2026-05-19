@@ -103,44 +103,44 @@ const uniqueStringArray = (message: string) =>
   });
 
 const productVariantFields = z.object({
-    sku: z
-      .string()
-      .trim()
-      .min(1, "SKU é obrigatório")
-      .max(80, "SKU deve ter no máximo 80 caracteres")
-      .transform((value) => value.toUpperCase()),
-    colorName: z
-      .string()
-      .trim()
-      .min(1, "Nome da cor é obrigatório")
-      .max(80, "Nome da cor deve ter no máximo 80 caracteres")
-      .default("Default"),
-    colorHex: colorHexSchema,
-    size: z
-      .string()
-      .trim()
-      .min(1, "Tamanho é obrigatório")
-      .max(40, "Tamanho deve ter no máximo 40 caracteres")
-      .default("One Size"),
-    priceCents: optionalMoneyCents("Preço da variante"),
-    compareAtPriceCents: optionalMoneyCents("Preço de comparação da variante"),
-    stockQuantity: z
-      .number()
-      .int("Estoque deve ser um número inteiro")
-      .min(0, "Estoque não pode ser negativo")
-      .default(0),
-    lowStockThreshold: z
-      .number()
-      .int("Limite de estoque baixo deve ser um número inteiro")
-      .min(0, "Limite de estoque baixo não pode ser negativo")
-      .default(5),
-    weightGrams: z
-      .number()
-      .int("Peso deve ser um número inteiro")
-      .min(0, "Peso não pode ser negativo")
-      .nullable()
-      .optional(),
-    isActive: z.boolean().default(true),
+  sku: z
+    .string()
+    .trim()
+    .min(1, "SKU é obrigatório")
+    .max(80, "SKU deve ter no máximo 80 caracteres")
+    .transform((value) => value.toUpperCase()),
+  colorName: z
+    .string()
+    .trim()
+    .min(1, "Nome da cor é obrigatório")
+    .max(80, "Nome da cor deve ter no máximo 80 caracteres")
+    .default("Default"),
+  colorHex: colorHexSchema,
+  size: z
+    .string()
+    .trim()
+    .min(1, "Tamanho é obrigatório")
+    .max(40, "Tamanho deve ter no máximo 40 caracteres")
+    .default("One Size"),
+  priceCents: optionalMoneyCents("Preço da variante"),
+  compareAtPriceCents: optionalMoneyCents("Preço de comparação da variante"),
+  stockQuantity: z
+    .number()
+    .int("Estoque deve ser um número inteiro")
+    .min(0, "Estoque não pode ser negativo")
+    .default(0),
+  lowStockThreshold: z
+    .number()
+    .int("Limite de estoque baixo deve ser um número inteiro")
+    .min(0, "Limite de estoque baixo não pode ser negativo")
+    .default(5),
+  weightGrams: z
+    .number()
+    .int("Peso deve ser um número inteiro")
+    .min(0, "Peso não pode ser negativo")
+    .nullable()
+    .optional(),
+  isActive: z.boolean().default(true),
   displayOrder: z
     .number()
     .int("Ordem da variante deve ser um número inteiro")
@@ -148,17 +148,16 @@ const productVariantFields = z.object({
     .optional(),
 });
 
-const productVariantBaseInput = productVariantFields
-  .refine(
-    ({ priceCents, compareAtPriceCents }) =>
-      compareAtPriceCents == null ||
-      priceCents == null ||
-      compareAtPriceCents >= priceCents,
-    {
-      path: ["compareAtPriceCents"],
-      message: "Preço de comparação deve ser maior ou igual ao preço",
-    },
-  );
+const productVariantBaseInput = productVariantFields.refine(
+  ({ priceCents, compareAtPriceCents }) =>
+    compareAtPriceCents == null ||
+    priceCents == null ||
+    compareAtPriceCents >= priceCents,
+  {
+    path: ["compareAtPriceCents"],
+    message: "Preço de comparação deve ser maior ou igual ao preço",
+  },
+);
 
 const uniqueVariants = <
   T extends { sku?: string; colorName?: string; size?: string },
@@ -212,7 +211,7 @@ const uniqueVariants = <
 const productImageInput = z.object({
   mediaAssetId: z.string().trim().min(1, "Asset da imagem é obrigatório"),
   variantId: optionalId,
-  variantSku: optionalId,
+  variantSku: optionalId.transform((value) => value?.toUpperCase()),
   altText: optionalText(
     255,
     "Texto alternativo deve ter no máximo 255 caracteres",
@@ -267,33 +266,30 @@ const collectionIdsInput = uniqueStringArray("Coleção duplicada").max(
 );
 
 const productBaseFields = z.object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Nome do produto é obrigatório")
-      .max(160, "Nome do produto deve ter no máximo 160 caracteres"),
-    subtitle: optionalText(
-      180,
-      "Subtítulo deve ter no máximo 180 caracteres",
-    ),
-    description: optionalText(
-      8000,
-      "Descrição deve ter no máximo 8000 caracteres",
-    ),
-    status: productStatusSchema.default("draft"),
-    categoryId: optionalId,
-    basePriceCents: moneyCents("Preço base"),
-    compareAtPriceCents: optionalMoneyCents("Preço de comparação"),
-    costCents: optionalMoneyCents("Custo interno"),
-    currency: currencySchema,
-    isFeatured: z.boolean().default(false),
-    material: optionalText(500, "Material deve ter no máximo 500 caracteres"),
-    fit: optionalText(500, "Modelagem deve ter no máximo 500 caracteres"),
-    careInstructions: optionalText(
-      1000,
-      "Cuidados devem ter no máximo 1000 caracteres",
-    ),
-    seoTitle: optionalText(160, "Título SEO deve ter no máximo 160 caracteres"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Nome do produto é obrigatório")
+    .max(160, "Nome do produto deve ter no máximo 160 caracteres"),
+  subtitle: optionalText(180, "Subtítulo deve ter no máximo 180 caracteres"),
+  description: optionalText(
+    8000,
+    "Descrição deve ter no máximo 8000 caracteres",
+  ),
+  status: productStatusSchema.default("draft"),
+  categoryId: optionalId,
+  basePriceCents: moneyCents("Preço base"),
+  compareAtPriceCents: optionalMoneyCents("Preço de comparação"),
+  costCents: optionalMoneyCents("Custo interno"),
+  currency: currencySchema,
+  isFeatured: z.boolean().default(false),
+  material: optionalText(500, "Material deve ter no máximo 500 caracteres"),
+  fit: optionalText(500, "Modelagem deve ter no máximo 500 caracteres"),
+  careInstructions: optionalText(
+    1000,
+    "Cuidados devem ter no máximo 1000 caracteres",
+  ),
+  seoTitle: optionalText(160, "Título SEO deve ter no máximo 160 caracteres"),
   seoDescription: optionalText(
     300,
     "Descrição SEO deve ter no máximo 300 caracteres",
@@ -320,51 +316,47 @@ export const createProductInput = productBaseFields
   );
 
 const productUpdateFieldsBase = z.object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Nome do produto é obrigatório")
-      .max(160, "Nome do produto deve ter no máximo 160 caracteres")
-      .optional(),
-    subtitle: optionalText(
-      180,
-      "Subtítulo deve ter no máximo 180 caracteres",
-    ),
-    description: optionalText(
-      8000,
-      "Descrição deve ter no máximo 8000 caracteres",
-    ),
-    status: productStatusSchema.optional(),
-    categoryId: optionalId,
-    basePriceCents: moneyCents("Preço base").optional(),
-    compareAtPriceCents: optionalMoneyCents("Preço de comparação"),
-    costCents: optionalMoneyCents("Custo interno"),
-    currency: currencySchema.optional(),
-    isFeatured: z.boolean().optional(),
-    material: optionalText(500, "Material deve ter no máximo 500 caracteres"),
-    fit: optionalText(500, "Modelagem deve ter no máximo 500 caracteres"),
-    careInstructions: optionalText(
-      1000,
-      "Cuidados devem ter no máximo 1000 caracteres",
-    ),
-    seoTitle: optionalText(160, "Título SEO deve ter no máximo 160 caracteres"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Nome do produto é obrigatório")
+    .max(160, "Nome do produto deve ter no máximo 160 caracteres")
+    .optional(),
+  subtitle: optionalText(180, "Subtítulo deve ter no máximo 180 caracteres"),
+  description: optionalText(
+    8000,
+    "Descrição deve ter no máximo 8000 caracteres",
+  ),
+  status: productStatusSchema.optional(),
+  categoryId: optionalId,
+  basePriceCents: moneyCents("Preço base").optional(),
+  compareAtPriceCents: optionalMoneyCents("Preço de comparação"),
+  costCents: optionalMoneyCents("Custo interno"),
+  currency: currencySchema.optional(),
+  isFeatured: z.boolean().optional(),
+  material: optionalText(500, "Material deve ter no máximo 500 caracteres"),
+  fit: optionalText(500, "Modelagem deve ter no máximo 500 caracteres"),
+  careInstructions: optionalText(
+    1000,
+    "Cuidados devem ter no máximo 1000 caracteres",
+  ),
+  seoTitle: optionalText(160, "Título SEO deve ter no máximo 160 caracteres"),
   seoDescription: optionalText(
     300,
     "Descrição SEO deve ter no máximo 300 caracteres",
   ),
 });
 
-export const productUpdateFields = productUpdateFieldsBase
-  .refine(
-    ({ basePriceCents, compareAtPriceCents }) =>
-      compareAtPriceCents == null ||
-      basePriceCents == null ||
-      compareAtPriceCents >= basePriceCents,
-    {
-      path: ["compareAtPriceCents"],
-      message: "Preço de comparação deve ser maior ou igual ao preço base",
-    },
-  );
+export const productUpdateFields = productUpdateFieldsBase.refine(
+  ({ basePriceCents, compareAtPriceCents }) =>
+    compareAtPriceCents == null ||
+    basePriceCents == null ||
+    compareAtPriceCents >= basePriceCents,
+  {
+    path: ["compareAtPriceCents"],
+    message: "Preço de comparação deve ser maior ou igual ao preço base",
+  },
+);
 
 export const updateProductInput = productUpdateFieldsBase
   .extend({
