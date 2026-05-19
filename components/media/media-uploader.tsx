@@ -58,7 +58,7 @@ export const MediaUploader = ({
     null,
   );
 
-  const effectiveMax = multiple ? maxFiles ?? Infinity : 1;
+  const effectiveMax = multiple ? (maxFiles ?? Infinity) : 1;
   const remainingSlots = Math.max(0, effectiveMax - value.length);
   const acceptAttr = accept.join(",");
   const maxSizeLabel = formatBytes(maxSizeBytes);
@@ -265,10 +265,9 @@ const SelectionCard = ({
   onRemove: () => void;
   disabled: boolean;
 }) => {
-  const previewUrl =
-    item.kind === "existing" ? item.url : item.previewUrl;
+  const previewUrl = item.kind === "existing" ? item.url : item.previewUrl;
   const altText =
-    item.kind === "existing" ? item.altText ?? item.filename : item.file.name;
+    item.kind === "existing" ? (item.altText ?? item.filename) : item.file.name;
 
   return (
     <div className="group relative aspect-square overflow-hidden rounded-lg border bg-muted">
@@ -285,6 +284,7 @@ const SelectionCard = ({
         size="icon-sm"
         onClick={onRemove}
         disabled={disabled}
+        aria-label="Remover imagem"
         className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100">
         <Trash2 />
       </Button>

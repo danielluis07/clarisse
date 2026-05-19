@@ -18,31 +18,53 @@ export const parseS3KeyFromUrl = (url: string): string | null => {
   }
 };
 
-/**
- * Deletes media assets from both S3 and the `mediaAssets` table.
- *
- * S3 deletion is best-effort: a failure to delete the object does NOT prevent
- * the DB row from being removed, because the DB row is what other tables
- * (categories, banners, products) reference. Leaving a row pointing at a
- * missing S3 object would be worse than the inverse.
- */
-export const deleteMediaAssetsByIds = async (ids: string[]) => {
-  if (!ids.length) return;
+export type DeletedMediaRow = {
+  id: string;
+  key: string | null;
+  url: string;
+};
 
-  const assets = await db
-    .select({
-      id: mediaAssets.id,
-      key: mediaAssets.key,
-      url: mediaAssets.url,
-    })
+/**
+ * Database-only step: removes the `mediaAssets` rows and returns enough info
+ * for a follow-up S3 purge. Accepts a Drizzle transaction handle so the caller
+ * can compose the delete with sibling DB writes atomically — when the parent
+ * entity (category, banner, etc.) is being deleted, both writes should
+ * succeed or fail together.
+ */
+export const deleteMediaAssetRows = async (
+  tx: Pick<typeof db, "select" | "delete">,
+  ids: string[],
+): Promise<DeletedMediaRow[]> => {
+  if (!ids.length) return [];
+
+  const rows = await tx
+    .select({ id: mediaAssets.id, key: mediaAssets.key, url: mediaAssets.url })
     .from(mediaAssets)
     .where(inArray(mediaAssets.id, ids));
 
-  if (!assets.length) return;
+  if (!rows.length) return [];
+
+  await tx.delete(mediaAssets).where(
+    inArray(
+      mediaAssets.id,
+      rows.map((row) => row.id),
+    ),
+  );
+
+  return rows;
+};
+
+/**
+ * Best-effort S3 cleanup. Run AFTER the parent transaction has committed —
+ * the DB rows are already gone, so a failure here just leaves an orphaned
+ * S3 object (logged but never thrown).
+ */
+export const purgeMediaAssetsFromS3 = async (rows: DeletedMediaRow[]) => {
+  if (!rows.length) return;
 
   await Promise.allSettled(
-    assets.map(async (asset) => {
-      const key = asset.key || parseS3KeyFromUrl(asset.url);
+    rows.map(async (row) => {
+      const key = row.key || parseS3KeyFromUrl(row.url);
       if (!key) return;
       try {
         await client.file(key).delete();
@@ -51,8 +73,16 @@ export const deleteMediaAssetsByIds = async (ids: string[]) => {
       }
     }),
   );
+};
 
-  await db
-    .delete(mediaAssets)
-    .where(inArray(mediaAssets.id, assets.map((asset) => asset.id)));
+/**
+ * Convenience wrapper: deletes rows + purges S3 in one call. Use when the
+ * call site isn't already inside a transaction (e.g. the standalone
+ * `media.deleteAsset` mutation). For composed deletes (e.g. removing a
+ * category along with its image), call `deleteMediaAssetRows` inside a
+ * `db.transaction(...)` and `purgeMediaAssetsFromS3` after it commits.
+ */
+export const deleteMediaAssetsByIds = async (ids: string[]) => {
+  const rows = await deleteMediaAssetRows(db, ids);
+  await purgeMediaAssetsFromS3(rows);
 };

@@ -147,15 +147,18 @@ const putFileToS3 = ({
   file,
   uploadUrl,
   onProgress,
+  timeoutMs = 30_000,
 }: {
   file: File;
   uploadUrl: string;
   onProgress?: (loaded: number, total: number) => void;
+  timeoutMs?: number;
 }): Promise<void> => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", uploadUrl);
     xhr.setRequestHeader("Content-Type", file.type);
+    xhr.timeout = timeoutMs;
 
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable) return;
@@ -171,6 +174,7 @@ const putFileToS3 = ({
     };
     xhr.onerror = () => reject(new Error("Falha no upload do arquivo"));
     xhr.onabort = () => reject(new Error("Upload cancelado"));
+    xhr.ontimeout = () => reject(new Error("Upload expirou"));
 
     xhr.send(file);
   });

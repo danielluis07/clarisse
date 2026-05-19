@@ -4,6 +4,7 @@ import { MediaUploader } from "@/components/media/media-uploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { BannerImageValue } from "@/modules/media/types";
+import { useId } from "react";
 
 export const BannerImageField = ({
   value,
@@ -23,6 +24,10 @@ export const BannerImageField = ({
   disabled?: boolean;
   className?: string;
 }) => {
+  const id = useId();
+  const altId = `${id}-banner-alt`;
+  const ctaId = `${id}-banner-cta`;
+
   const emit = (patch: Partial<BannerImageValue>) => {
     onChange({ ...value, ...patch });
   };
@@ -34,9 +39,7 @@ export const BannerImageField = ({
           <Label className="text-sm">Imagem desktop</Label>
           <MediaUploader
             value={value.desktop ? [value.desktop] : []}
-            onChange={(items) =>
-              emit({ desktop: items[0] ?? null })
-            }
+            onChange={(items) => emit({ desktop: items[0] ?? null })}
             onAssetRemoved={onAssetRemoved}
             multiple={false}
             disabled={disabled}
@@ -49,9 +52,7 @@ export const BannerImageField = ({
           <Label className="text-sm">Imagem mobile</Label>
           <MediaUploader
             value={value.mobile ? [value.mobile] : []}
-            onChange={(items) =>
-              emit({ mobile: items[0] ?? null })
-            }
+            onChange={(items) => emit({ mobile: items[0] ?? null })}
             onAssetRemoved={onAssetRemoved}
             multiple={false}
             disabled={disabled}
@@ -65,11 +66,11 @@ export const BannerImageField = ({
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {showAltText && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="banner-alt" className="text-sm">
+              <Label htmlFor={altId} className="text-sm">
                 Texto alternativo
               </Label>
               <Input
-                id="banner-alt"
+                id={altId}
                 value={value.altText ?? ""}
                 onChange={(event) =>
                   emit({ altText: event.target.value || null })
@@ -82,11 +83,11 @@ export const BannerImageField = ({
 
           {showCta && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="banner-cta" className="text-sm">
+              <Label htmlFor={ctaId} className="text-sm">
                 Link de destino
               </Label>
               <Input
-                id="banner-cta"
+                id={ctaId}
                 value={value.ctaUrl ?? ""}
                 onChange={(event) =>
                   emit({ ctaUrl: event.target.value || null })
@@ -101,4 +102,3 @@ export const BannerImageField = ({
     </div>
   );
 };
-

@@ -3,10 +3,7 @@ import { eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { mediaAssets } from "@/db/schema";
-import {
-  deleteMediaAssetsByIds,
-  parseS3KeyFromUrl,
-} from "@/lib/media-server";
+import { deleteMediaAssetsByIds, parseS3KeyFromUrl } from "@/lib/media-server";
 import { client } from "@/lib/s3";
 import {
   createPresignedUploadInput,
@@ -81,6 +78,7 @@ export const mediaRouter = createTRPCRouter({
     .input(registerAssetInput)
     .mutation(async ({ ctx, input }) => {
       const key = parseS3KeyFromUrl(input.url);
+
       if (!key) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -91,7 +89,7 @@ export const mediaRouter = createTRPCRouter({
       const [asset] = await db
         .insert(mediaAssets)
         .values({
-          key: input.key,
+          key,
           url: input.url,
           bucket: process.env.AWS_BUCKET_NAME ?? null,
           filename: input.filename,
@@ -118,7 +116,15 @@ export const mediaRouter = createTRPCRouter({
   deleteAsset: adminProcedure
     .input(deleteAssetInput)
     .mutation(async ({ input }) => {
-      await deleteMediaAssetsByIds([input.id]);
+      try {
+        await deleteMediaAssetsByIds([input.id]);
+      } catch (error) {
+        console.error("Erro ao limpar asset:", error);
+        // Make cleanup failures non-fatal for the client — the asset
+        // deletion is best-effort for S3 and DB cleanup; return the id
+        // so the UI can continue, retries can be attempted by the user.
+      }
+
       return { id: input.id };
     }),
 });

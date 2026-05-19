@@ -469,7 +469,7 @@ const CategoryFormBody = ({
               <Button asChild variant="outline" disabled={isSubmitting}>
                 <Link href="/admin/categories">Cancelar</Link>
               </Button>
-              <Button type="submit" isLoading={isSubmitting}>
+              <Button type="submit" className="w-40" isLoading={isSubmitting}>
                 {!isSubmitting && <Save data-icon="inline-start" />}
                 {submitLabel}
               </Button>
