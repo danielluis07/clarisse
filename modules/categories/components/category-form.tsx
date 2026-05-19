@@ -1,13 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { CategoryImageField } from "@/components/media/category-image-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,7 +39,11 @@ import {
 } from "@/modules/categories/hooks";
 import type { CategoryOutput } from "@/modules/categories/types";
 import { createCategoryInput } from "@/modules/categories/validations";
+import { useCommitMedia, useDeleteMedia } from "@/modules/media/hooks";
+import type { MediaSelectionItem } from "@/modules/media/types";
+import { fromExistingAsset } from "@/modules/media/types";
 import { useConfirm } from "@/providers/confirm-provider";
+import { useTRPC } from "@/trpc/client";
 
 const categoryFormSchema = createCategoryInput.omit({ imageId: true });
 
@@ -52,23 +59,18 @@ const getDefaultValues = (category?: CategoryOutput): CategoryFormInput => ({
   seoDescription: category?.seoDescription ?? "",
 });
 
-const getErrorMessage = (error: unknown) => {
-  return error instanceof Error
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error
     ? error.message
     : "Não foi possível salvar a categoria.";
-};
 
-const getDeleteErrorMessage = (error: unknown) => {
-  return error instanceof Error
+const getDeleteErrorMessage = (error: unknown) =>
+  error instanceof Error
     ? error.message
     : "Não foi possível excluir a categoria.";
-};
 
 export const CategoryForm = ({ id }: { id?: string }) => {
-  if (id) {
-    return <UpdateCategoryForm id={id} />;
-  }
-
+  if (id) return <UpdateCategoryForm id={id} />;
   return <CreateCategoryForm />;
 };
 
@@ -76,25 +78,22 @@ const CreateCategoryForm = () => {
   const router = useRouter();
   const createCategory = useCreateCategory();
 
-  const handleSubmit = async (values: CategoryFormOutput) => {
-    try {
-      // Category image upload will be wired later through imageId once media
-      // selection/upload is implemented.
-      await createCategory.mutateAsync(values);
-
-      toast.success("Categoria criada com sucesso.");
-      router.push(`/admin/categories`);
-      router.refresh();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+  const handleSubmit = async (
+    values: CategoryFormOutput,
+    imageId: string | null,
+  ) => {
+    await createCategory.mutateAsync({ ...values, imageId });
+    toast.success("Categoria criada com sucesso.");
+    router.push("/admin/categories");
+    router.refresh();
   };
 
   return (
     <CategoryFormBody
       mode="create"
       defaultValues={getDefaultValues()}
-      isSubmitting={createCategory.isPending}
+      initialImageId={null}
+      mutationPending={createCategory.isPending}
       onSubmit={handleSubmit}
     />
   );
@@ -105,23 +104,18 @@ const UpdateCategoryForm = ({ id }: { id: string }) => {
   const { data: category } = useCategorySuspense({ id });
   const updateCategory = useUpdateCategory();
 
-  const handleSubmit = async (values: CategoryFormOutput) => {
-    try {
-      // Category image upload will be wired later through imageId once media
-      // selection/upload is implemented.
-      const updatedCategory = await updateCategory.mutateAsync({
-        id,
-        ...values,
-      });
-
-      toast.success("Categoria atualizada com sucesso.");
-      router.refresh();
-
-      return updatedCategory;
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-      throw error;
-    }
+  const handleSubmit = async (
+    values: CategoryFormOutput,
+    imageId: string | null,
+  ) => {
+    const updated = await updateCategory.mutateAsync({
+      id,
+      ...values,
+      imageId,
+    });
+    toast.success("Categoria atualizada com sucesso.");
+    router.refresh();
+    return updated;
   };
 
   return (
@@ -129,7 +123,8 @@ const UpdateCategoryForm = ({ id }: { id: string }) => {
       mode="update"
       category={category}
       defaultValues={getDefaultValues(category)}
-      isSubmitting={updateCategory.isPending}
+      initialImageId={category.imageId ?? null}
+      mutationPending={updateCategory.isPending}
       onSubmit={handleSubmit}
     />
   );
@@ -139,20 +134,25 @@ const CategoryFormBody = ({
   mode,
   category,
   defaultValues,
-  isSubmitting,
+  initialImageId,
+  mutationPending,
   onSubmit,
 }: {
   mode: "create" | "update";
   category?: CategoryOutput;
   defaultValues: CategoryFormInput;
-  isSubmitting: boolean;
-  onSubmit: (values: CategoryFormOutput) => Promise<unknown>;
+  initialImageId: string | null;
+  mutationPending: boolean;
+  onSubmit: (
+    values: CategoryFormOutput,
+    imageId: string | null,
+  ) => Promise<unknown>;
 }) => {
   const {
-    control,
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<CategoryFormInput, unknown, CategoryFormOutput>({
     resolver: zodResolver(categoryFormSchema),
@@ -161,10 +161,36 @@ const CategoryFormBody = ({
   const router = useRouter();
   const { confirm, closeConfirm, setPending } = useConfirm();
   const deleteCategory = useDeleteCategory();
+  const trpc = useTRPC();
+  const { commit } = useCommitMedia();
+  const deleteMedia = useDeleteMedia();
+
+  // Hydrate the initial existing asset (edit mode) so the field can show it.
+  const { data: initialAsset } = useQuery({
+    ...trpc.media.getById.queryOptions({ id: initialImageId ?? "" }),
+    enabled: !!initialImageId,
+  });
+
+  // Until the user interacts, the selection reflects the initial asset (once
+  // it loads). After any change (replace, add, remove), `touched` flips and
+  // `userSelection` becomes the source of truth.
+  const [userSelection, setUserSelection] = useState<MediaSelectionItem | null>(
+    null,
+  );
+  const [touched, setTouched] = useState(false);
+  const [orphanedAssetIds, setOrphanedAssetIds] = useState<string[]>([]);
+  const [isCommitting, setIsCommitting] = useState(false);
+
+  const selection: MediaSelectionItem | null = touched
+    ? userSelection
+    : initialAsset
+      ? fromExistingAsset(initialAsset)
+      : null;
+
+  const isSubmitting = isCommitting || mutationPending;
 
   const submitLabel =
     mode === "create" ? "Criar categoria" : "Salvar alterações";
-
   const title = mode === "create" ? "Nova categoria" : "Editar categoria";
   const description =
     mode === "create"
@@ -172,12 +198,62 @@ const CategoryFormBody = ({
       : "Atualize os dados editoriais e de navegação desta categoria.";
 
   const submit = handleSubmit(async (values) => {
-    const result = await onSubmit(values);
+    if (isSubmitting) return;
+    setIsCommitting(true);
 
-    if (mode === "update" && result) {
-      reset(getDefaultValues(result as CategoryOutput));
+    try {
+      // 1. Upload any pending file → resolve to assetId
+      const committed = selection
+        ? await commit({ items: [selection], folder: "categories" })
+        : [];
+      const imageId = committed[0]?.assetId ?? null;
+
+      // 2. Persist the category
+      const result = await onSubmit(values, imageId);
+
+      // 3. Clean up orphans (best-effort — log if any fail)
+      if (orphanedAssetIds.length) {
+        await Promise.allSettled(
+          orphanedAssetIds.map((id) => deleteMedia.mutateAsync({ id })),
+        );
+        setOrphanedAssetIds([]);
+      }
+
+      // 4. Resync local state with what the server returned (update mode)
+      if (mode === "update" && result) {
+        const updated = result as CategoryOutput;
+        reset(getDefaultValues(updated));
+        if (committed[0]) {
+          setUserSelection({
+            kind: "existing",
+            localId: committed[0].assetId,
+            assetId: committed[0].assetId,
+            url: committed[0].url,
+            filename: committed[0].filename,
+            altText: committed[0].altText,
+          });
+        } else {
+          setUserSelection(null);
+        }
+        setTouched(true);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsCommitting(false);
     }
   });
+
+  const handleSelectionChange = (next: MediaSelectionItem | null) => {
+    setUserSelection(next);
+    setTouched(true);
+  };
+
+  const handleAssetRemoved = (assetId: string) => {
+    setOrphanedAssetIds((prev) =>
+      prev.includes(assetId) ? prev : [...prev, assetId],
+    );
+  };
 
   const handleDelete = async () => {
     if (!category) return;
@@ -320,6 +396,20 @@ const CategoryFormBody = ({
                 )}
               />
 
+              <Field>
+                <FieldLabel>Imagem da categoria</FieldLabel>
+                <FieldDescription>
+                  Imagem usada nas vitrines e na navegação editorial. O upload
+                  acontece ao salvar.
+                </FieldDescription>
+                <CategoryImageField
+                  value={selection}
+                  onChange={handleSelectionChange}
+                  onAssetRemoved={handleAssetRemoved}
+                  disabled={isSubmitting}
+                />
+              </Field>
+
               <div className="grid gap-5 md:grid-cols-2">
                 <Field data-invalid={!!errors.seoTitle}>
                   <FieldLabel htmlFor="seoTitle">Título SEO</FieldLabel>
@@ -379,7 +469,7 @@ const CategoryFormBody = ({
               <Button asChild variant="outline" disabled={isSubmitting}>
                 <Link href="/admin/categories">Cancelar</Link>
               </Button>
-              <Button type="submit" isLoading={isSubmitting}>
+              <Button type="submit" className="w-40" isLoading={isSubmitting}>
                 {!isSubmitting && <Save data-icon="inline-start" />}
                 {submitLabel}
               </Button>

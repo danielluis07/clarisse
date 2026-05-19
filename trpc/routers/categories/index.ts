@@ -2,6 +2,10 @@ import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { escapeLikeWildcards } from "@/lib/db-utils";
 import {
+  deleteMediaAssetRows,
+  purgeMediaAssetsFromS3,
+} from "@/lib/media-server";
+import {
   createCategoryInput,
   deleteCategoryInput,
   getCategoryInput,
@@ -180,17 +184,30 @@ export const categoriesRouter = createTRPCRouter({
   delete: adminProcedure
     .input(deleteCategoryInput)
     .mutation(async ({ input }) => {
-      const [data] = await db
-        .delete(categories)
-        .where(eq(categories.id, input.id))
-        .returning(categorySelect);
+      const { data, deletedMediaRows } = await db.transaction(async (tx) => {
+        const [data] = await tx
+          .delete(categories)
+          .where(eq(categories.id, input.id))
+          .returning(categorySelect);
 
-      if (!data) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Categoria não encontrada",
-        });
-      }
+        if (!data) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Categoria não encontrada",
+          });
+        }
+
+        const deletedMediaRows = data.imageId
+          ? await deleteMediaAssetRows(tx, [data.imageId])
+          : [];
+
+        return { data, deletedMediaRows };
+      });
+
+      // S3 purge runs after the transaction commits — orphaned objects are
+      // logged, never thrown, so this can never resurrect a successful delete
+      // as a client-facing error.
+      await purgeMediaAssetsFromS3(deletedMediaRows);
 
       return data;
     }),
@@ -210,17 +227,31 @@ export const categoriesRouter = createTRPCRouter({
       }
 
       try {
-        const deletedRows = await db
-          .delete(categories)
-          .where(inArray(categories.id, input.ids))
-          .returning();
+        const { deletedRows, deletedMediaRows } = await db.transaction(
+          async (tx) => {
+            const deletedRows = await tx
+              .delete(categories)
+              .where(inArray(categories.id, input.ids))
+              .returning();
 
-        if (deletedRows.length === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Categorias não encontradas",
-          });
-        }
+            if (deletedRows.length === 0) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Categorias não encontradas",
+              });
+            }
+
+            const imageIds = deletedRows
+              .map((row) => row.imageId)
+              .filter((id): id is string => !!id);
+
+            const deletedMediaRows = await deleteMediaAssetRows(tx, imageIds);
+
+            return { deletedRows, deletedMediaRows };
+          },
+        );
+
+        await purgeMediaAssetsFromS3(deletedMediaRows);
 
         return deletedRows;
       } catch (error) {
