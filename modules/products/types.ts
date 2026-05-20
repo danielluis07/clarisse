@@ -9,6 +9,8 @@ export type ProductListItem = ProductsOutput["data"][number];
 
 export type ProductInput = RouterInput["products"]["get"];
 export type ProductOutput = RouterOutput["products"]["get"];
+export type ProductFormOptionsOutput =
+  RouterOutput["products"]["formOptions"];
 
 export type CreateProductInput = RouterInput["products"]["create"];
 export type UpdateProductInput = RouterInput["products"]["update"];

@@ -17,6 +17,10 @@ export const prefetchProduct = async (id: string) => {
   return prefetch(trpc.products.get.queryOptions({ id }));
 };
 
+export const prefetchProductFormOptions = async () => {
+  return prefetch(trpc.products.formOptions.queryOptions());
+};
+
 export const prefetchInventory = async (params: Partial<InventoryInput>) => {
   return prefetch(
     trpc.products.inventoryList.queryOptions(normalizeInventoryParams(params)),

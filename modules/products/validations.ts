@@ -306,6 +306,10 @@ export const createProductInput = productBaseFields
       .superRefine(uniqueVariants),
     images: productImagesInput.default([]),
   })
+  .refine(({ categoryId }) => categoryId != null && categoryId !== "", {
+    path: ["categoryId"],
+    message: "Categoria é obrigatória",
+  })
   .refine(
     ({ basePriceCents, compareAtPriceCents }) =>
       compareAtPriceCents == null || compareAtPriceCents >= basePriceCents,
@@ -363,6 +367,27 @@ export const updateProductInput = productUpdateFieldsBase
     id: z.string().min(1, "ID do produto é obrigatório"),
     collectionIds: collectionIdsInput.optional(),
     images: productImagesInput.optional(),
+    variants: z
+      .array(
+        productVariantFields
+          .extend({
+            id: z.string().min(1).optional(),
+          })
+          .refine(
+            ({ priceCents, compareAtPriceCents }) =>
+              compareAtPriceCents == null ||
+              priceCents == null ||
+              compareAtPriceCents >= priceCents,
+            {
+              path: ["compareAtPriceCents"],
+              message: "Preço de comparação deve ser maior ou igual ao preço",
+            },
+          ),
+      )
+      .min(1, "Produto deve ter pelo menos uma variante")
+      .max(200, "Produto pode ter no máximo 200 variantes")
+      .superRefine(uniqueVariants)
+      .optional(),
   })
   .refine(
     ({ basePriceCents, compareAtPriceCents }) =>

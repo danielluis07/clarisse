@@ -37,6 +37,12 @@ export const useInventorySuspense = (params: Partial<InventoryInput>) => {
   return useSuspenseQuery(trpc.products.inventoryList.queryOptions(normalized));
 };
 
+export const useProductFormOptionsSuspense = () => {
+  const trpc = useTRPC();
+
+  return useSuspenseQuery(trpc.products.formOptions.queryOptions());
+};
+
 export const useCreateProduct = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

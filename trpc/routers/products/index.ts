@@ -70,6 +70,39 @@ import { rethrowProductWriteError } from "@/modules/products/errors";
 import { adminProcedure, createTRPCRouter } from "@/trpc/init";
 
 export const productsRouter = createTRPCRouter({
+  formOptions: adminProcedure.query(async () => {
+    const [categoryOptions, collectionOptions] = await Promise.all([
+      db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          isActive: categories.isActive,
+        })
+        .from(categories)
+        .orderBy(asc(categories.displayOrder), asc(categories.name)),
+      db
+        .select({
+          id: collections.id,
+          name: collections.name,
+          slug: collections.slug,
+          isActive: collections.isActive,
+          isFeatured: collections.isFeatured,
+        })
+        .from(collections)
+        .orderBy(
+          desc(collections.isFeatured),
+          asc(collections.displayOrder),
+          asc(collections.name),
+        ),
+    ]);
+
+    return {
+      categories: categoryOptions,
+      collections: collectionOptions,
+    };
+  }),
+
   list: adminProcedure.input(listProductsInput).query(async ({ input }) => {
     const {
       page,
@@ -442,7 +475,7 @@ export const productsRouter = createTRPCRouter({
   update: adminProcedure
     .input(updateProductInput)
     .mutation(async ({ input }) => {
-      const { id, collectionIds, images, ...values } = input;
+      const { id, collectionIds, images, variants, ...values } = input;
 
       const [existing] = await db
         .select(productSelect)
@@ -561,6 +594,79 @@ export const productsRouter = createTRPCRouter({
               .delete(productImages)
               .where(eq(productImages.productId, id));
             await insertProductImages(tx, id, images, refs);
+          }
+
+          if (variants) {
+            const existingVariants = await tx
+              .select({ id: productVariants.id })
+              .from(productVariants)
+              .where(eq(productVariants.productId, id));
+            const existingIds = new Set(
+              existingVariants.map((variant) => variant.id),
+            );
+            const incomingIds = new Set(
+              variants
+                .map((variant) => variant.id)
+                .filter((variantId): variantId is string => !!variantId),
+            );
+            const invalidIds = [...incomingIds].filter(
+              (variantId) => !existingIds.has(variantId),
+            );
+
+            if (invalidIds.length) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Variantes não pertencem ao produto: ${invalidIds.join(", ")}`,
+              });
+            }
+
+            for (const [index, variantInput] of variants.entries()) {
+              const valuesToSave = normalizeVariantValues(
+                id,
+                variantInput,
+                index,
+              );
+
+              if (variantInput.id) {
+                await tx
+                  .update(productVariants)
+                  .set({
+                    sku: valuesToSave.sku,
+                    colorName: valuesToSave.colorName,
+                    colorHex: valuesToSave.colorHex,
+                    size: valuesToSave.size,
+                    priceCents: valuesToSave.priceCents,
+                    compareAtPriceCents: valuesToSave.compareAtPriceCents,
+                    stockQuantity: valuesToSave.stockQuantity,
+                    lowStockThreshold: valuesToSave.lowStockThreshold,
+                    weightGrams: valuesToSave.weightGrams,
+                    isActive: valuesToSave.isActive,
+                    displayOrder: valuesToSave.displayOrder,
+                  })
+                  .where(
+                    and(
+                      eq(productVariants.id, variantInput.id),
+                      eq(productVariants.productId, id),
+                    ),
+                  );
+              } else {
+                await tx.insert(productVariants).values(valuesToSave);
+              }
+            }
+
+            const idsToDelete = [...existingIds].filter(
+              (variantId) => !incomingIds.has(variantId),
+            );
+            if (idsToDelete.length) {
+              await tx
+                .delete(productVariants)
+                .where(
+                  and(
+                    eq(productVariants.productId, id),
+                    inArray(productVariants.id, idsToDelete),
+                  ),
+                );
+            }
           }
 
           return product;
