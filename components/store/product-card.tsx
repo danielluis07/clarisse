@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export const ProductCard = ({
   href,
@@ -46,6 +47,7 @@ export const ProductCard = ({
           </span>
         )}
       </div>
+
       <div className="mt-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
           {category && (
@@ -66,6 +68,11 @@ export const ProductCard = ({
           )}
         </div>
       </div>
+
+      <span className="mt-4 flex items-center justify-center gap-2 border border-foreground/15 px-4 py-3 text-[11px] uppercase tracking-[0.22em] text-foreground/75 transition-colors group-hover:border-foreground group-hover:text-foreground">
+        Ver detalhes
+        <ArrowRight className="size-3 transition-transform duration-300 group-hover:translate-x-1" />
+      </span>
     </Link>
   );
 };

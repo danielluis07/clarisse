@@ -45,13 +45,18 @@ export const NewArrivals = () => {
     <section className="bg-background py-24 md:py-32">
       <div className="mx-auto max-w-screen-2xl px-6 md:px-10">
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-foreground/55">
-              Recém-chegadas
-            </p>
-            <h2 className="mt-4 font-heading text-4xl font-light leading-[1.05] tracking-tight md:text-5xl lg:text-6xl">
-              Novidades da estação
-            </h2>
+          <div className="flex items-baseline gap-5">
+            <span className="hidden font-heading text-2xl italic text-foreground/40 md:inline">
+              01
+            </span>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.3em] text-foreground/55">
+                Recém-chegadas
+              </p>
+              <h2 className="mt-4 font-heading text-4xl font-light leading-[1.05] tracking-tight md:text-5xl lg:text-6xl">
+                Novidades da estação
+              </h2>
+            </div>
           </div>
           <Link
             href="/novidades"
@@ -61,7 +66,7 @@ export const NewArrivals = () => {
           </Link>
         </div>
 
-        <div className="mt-16 grid grid-cols-2 gap-x-3 gap-y-12 md:gap-x-6 md:gap-y-16 lg:grid-cols-4">
+        <div className="mt-16 grid grid-cols-2 gap-x-3 gap-y-12 md:gap-x-6 md:gap-y-16 lg:grid-cols-4 lg:gap-x-8">
           {products.map((p) => (
             <ProductCard key={p.href} {...p} />
           ))}
