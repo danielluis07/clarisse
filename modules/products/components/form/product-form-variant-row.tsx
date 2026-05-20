@@ -49,9 +49,7 @@ export const ProductFormVariantRow = ({
           name={`variants.${index}.sku`}
           render={({ field }) => (
             <Field data-invalid={!!variantErrors?.sku} className="gap-1">
-              <FieldLabel
-                htmlFor={`variant-${index}-sku`}
-                className="sr-only">
+              <FieldLabel htmlFor={`variant-${index}-sku`} className="sr-only">
                 SKU
               </FieldLabel>
               <Input
@@ -97,9 +95,7 @@ export const ProductFormVariantRow = ({
       </TableCell>
       <TableCell>
         <Field data-invalid={!!colorHex} className="gap-1">
-          <FieldLabel
-            htmlFor={`variant-${index}-colorHex`}
-            className="sr-only">
+          <FieldLabel htmlFor={`variant-${index}-colorHex`} className="sr-only">
             Hex
           </FieldLabel>
           <div className="flex items-center gap-2">
@@ -123,7 +119,7 @@ export const ProductFormVariantRow = ({
                   />
                   <Input
                     id={`variant-${index}-colorHex`}
-                    value={field.value ?? ""}
+                    {...field}
                     onChange={field.onChange}
                     aria-invalid={!!colorHex}
                     disabled={disabled}
@@ -142,9 +138,7 @@ export const ProductFormVariantRow = ({
           name={`variants.${index}.size`}
           render={({ field }) => (
             <Field data-invalid={!!variantErrors?.size} className="gap-1">
-              <FieldLabel
-                htmlFor={`variant-${index}-size`}
-                className="sr-only">
+              <FieldLabel htmlFor={`variant-${index}-size`} className="sr-only">
                 Tamanho
               </FieldLabel>
               <Input
@@ -154,9 +148,7 @@ export const ProductFormVariantRow = ({
                 {...field}
               />
               <FieldError
-                errors={
-                  variantErrors?.size ? [variantErrors.size] : undefined
-                }
+                errors={variantErrors?.size ? [variantErrors.size] : undefined}
               />
             </Field>
           )}

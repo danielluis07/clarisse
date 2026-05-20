@@ -39,7 +39,7 @@ export const VariantAmountField = ({
           aria-invalid={!!error}
           disabled={disabled}
           placeholder="R$ 0,00"
-          value={(value as string) ?? ""}
+          onBlur={onBlur}
           onChange={onChange}
           {...fieldProps}
         />

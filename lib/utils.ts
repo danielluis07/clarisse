@@ -62,7 +62,7 @@ export function centsToReais(cents: number): string {
 }
 
 export const formatReaisInput = (
-  e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
+  e: ChangeEvent<HTMLInputElement>,
   field: { onChange: (value: number) => void },
 ) => {
   const rawValue = e.target.value.replace(/\D/g, "");
