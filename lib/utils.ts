@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
+import type { ChangeEvent } from "react";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -51,4 +52,20 @@ export const compressImageToWebP = async (file: File) => {
   });
 
   return finalImageFile;
+};
+
+export function centsToReais(cents: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(cents / 100);
+}
+
+export const formatReaisInput = (
+  e: ChangeEvent<HTMLInputElement>,
+  field: { onChange: (value: number) => void },
+) => {
+  const rawValue = e.target.value.replace(/\D/g, "");
+  const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
+  field.onChange(numericValue);
 };

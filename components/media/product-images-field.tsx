@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Star, Trash2 } from "lucide-react";
+import Image from "next/image";
 
 import { MediaUploader } from "@/components/media/media-uploader";
 import { Button } from "@/components/ui/button";
@@ -191,12 +192,22 @@ const ProductImageCard = ({
         slot.draft.isPrimary && "ring-2 ring-primary/40",
       )}>
       <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={previewUrl}
-          alt={slot.draft.altText ?? filename}
-          className="size-full object-cover"
-        />
+        {slot.selection.kind === "existing" ? (
+          <Image
+            src={previewUrl}
+            alt={slot.draft.altText ?? filename}
+            fill
+            sizes="(max-width: 768px) 50vw, 200px"
+            className="object-cover"
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewUrl}
+            alt={slot.draft.altText ?? filename}
+            className="size-full object-cover"
+          />
+        )}
         {slot.draft.isPrimary && (
           <span className="absolute top-1.5 left-1.5 rounded-md bg-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
             Capa
