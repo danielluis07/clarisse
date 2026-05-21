@@ -11,8 +11,7 @@ export type ProductInput = RouterInput["products"]["get"];
 export type ProductOutput = RouterOutput["products"]["get"];
 export type StoreProductInput = RouterInput["products"]["getStoreProduct"];
 export type StoreProductOutput = RouterOutput["products"]["getStoreProduct"];
-export type ProductFormOptionsOutput =
-  RouterOutput["products"]["formOptions"];
+export type ProductFormOptionsOutput = RouterOutput["products"]["formOptions"];
 
 export type CreateProductInput = RouterInput["products"]["create"];
 export type UpdateProductInput = RouterInput["products"]["update"];
@@ -58,4 +57,30 @@ export type ProductVariantPayload = {
   weightGrams?: number | null;
   isActive: boolean;
   displayOrder?: number;
+};
+
+export type ImageMessagePart = {
+  type: "image";
+  image: ArrayBuffer | URL;
+  mediaType?: string;
+};
+
+export type ProductAiCatalogOptions = {
+  categories: { id: string; name: string; description: string | null }[];
+  collections: {
+    id: string;
+    name: string;
+    description: string | null;
+    isFeatured: boolean;
+  }[];
+};
+
+export type ProductAiImageInput = {
+  parts: ImageMessagePart[];
+  descriptions: Array<{
+    imageIndex: number;
+    source: "uploaded_file" | "existing_url";
+    filename: string | null;
+    altText: string | null;
+  }>;
 };
