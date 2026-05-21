@@ -10,6 +10,7 @@ import type {
   InventoryInput,
   ProductInput,
   ProductsInput,
+  StoreProductInput,
 } from "@/modules/products/types";
 import {
   normalizeInventoryParams,
@@ -28,6 +29,12 @@ export const useProductSuspense = (params: ProductInput) => {
   const trpc = useTRPC();
 
   return useSuspenseQuery(trpc.products.get.queryOptions(params));
+};
+
+export const useStoreProductSuspense = (params: StoreProductInput) => {
+  const trpc = useTRPC();
+
+  return useSuspenseQuery(trpc.products.getStoreProduct.queryOptions(params));
 };
 
 export const useInventorySuspense = (params: Partial<InventoryInput>) => {

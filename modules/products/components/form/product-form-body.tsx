@@ -5,7 +5,7 @@ import { ArrowLeft, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { ProductImageSlot } from "@/components/media/product-images-field";
@@ -48,6 +48,7 @@ import {
   defaultVariant,
   getProductFormDefaultValues,
   getProductFormErrorMessage,
+  getVariantColorOptions,
   normalizeSkuPart,
   parseColorToken,
   productImagesToSlots,
@@ -108,6 +109,14 @@ export const ProductFormBody = ({
     name: "variants",
     keyName: "fieldId",
   });
+  const watchedVariants = useWatch({
+    control,
+    name: "variants",
+  });
+  const imageColorOptions = useMemo(
+    () => getVariantColorOptions(watchedVariants),
+    [watchedVariants],
+  );
 
   const isSubmitting =
     isCommitting ||
@@ -138,6 +147,8 @@ export const ProductFormBody = ({
 
       return {
         mediaAssetId,
+        colorName: slot.draft.colorName,
+        colorHex: slot.draft.colorHex,
         altText: slot.draft.altText,
         position: index,
         isPrimary: slot.draft.isPrimary,
@@ -200,7 +211,7 @@ export const ProductFormBody = ({
 
       if (mode === "create") {
         const { variants, ...productPayload } = payload;
-        const created = await createProduct.mutateAsync({
+        await createProduct.mutateAsync({
           ...productPayload,
           variants: variants.map((variant) => ({
             sku: variant.sku,
@@ -330,7 +341,7 @@ export const ProductFormBody = ({
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-6">
-      <header className="flex flex-col gap-4 border-b pb-5 xl:flex-row xl:items-start xl:justify-between">
+      <header className="sticky top-0 z-30 flex flex-col gap-4 border-b bg-background/95 pb-5 pt-4 backdrop-blur supports-backdrop-filter:bg-background/80 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex flex-col gap-1.5">
           <Button asChild variant="ghost" size="sm" className="w-fit px-0">
             <Link href={backHref}>
@@ -380,6 +391,7 @@ export const ProductFormBody = ({
         imageSlots={imageSlots}
         onImageSlotsChange={setImageSlots}
         onAssetRemoved={handleAssetRemoved}
+        imageColorOptions={imageColorOptions}
         options={options}
         variantsSlot={
           <Card>

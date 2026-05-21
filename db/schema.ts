@@ -3,7 +3,6 @@ import {
   boolean,
   check,
   customType,
-  foreignKey,
   index,
   integer,
   jsonb,
@@ -470,6 +469,8 @@ export const productImages = pgTable(
     variantId: text("variant_id").references(() => productVariants.id, {
       onDelete: "set null",
     }),
+    colorName: text("color_name"),
+    colorHex: text("color_hex"),
     mediaAssetId: text("media_asset_id")
       .notNull()
       .references(() => mediaAssets.id, { onDelete: "restrict" }),
@@ -483,6 +484,10 @@ export const productImages = pgTable(
   (table) => [
     index("product_images_product_id_idx").on(table.productId),
     index("product_images_variant_id_idx").on(table.variantId),
+    index("product_images_product_color_idx").on(
+      table.productId,
+      table.colorName,
+    ),
     unique("product_images_product_media_asset_unique").on(
       table.productId,
       table.mediaAssetId,
@@ -490,12 +495,11 @@ export const productImages = pgTable(
     uniqueIndex("product_images_one_primary_per_product_idx")
       .on(table.productId)
       .where(sql`${table.isPrimary} = true`),
-    foreignKey({
-      columns: [table.productId, table.variantId],
-      foreignColumns: [productVariants.productId, productVariants.id],
-      name: "product_images_product_variant_consistency_fk",
-    }),
     check("product_images_position_non_negative", sql`${table.position} >= 0`),
+    check(
+      "product_images_color_hex_format",
+      sql`${table.colorHex} is null or ${table.colorHex} ~ '^#[0-9a-fA-F]{6}$'`,
+    ),
   ],
 );
 

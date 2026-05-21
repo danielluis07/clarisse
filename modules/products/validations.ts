@@ -212,6 +212,8 @@ const productImageInput = z.object({
   mediaAssetId: z.string().trim().min(1, "Asset da imagem é obrigatório"),
   variantId: optionalId,
   variantSku: optionalId.transform((value) => value?.toUpperCase()),
+  colorName: optionalText(80, "Nome da cor deve ter no máximo 80 caracteres"),
+  colorHex: colorHexSchema,
   altText: optionalText(
     255,
     "Texto alternativo deve ter no máximo 255 caracteres",
@@ -425,6 +427,10 @@ export const listProductsInput = z
 
 export const getProductInput = z.object({
   id: z.string().min(1, "ID do produto é obrigatório"),
+});
+
+export const getStoreProductInput = z.object({
+  slug: z.string().trim().min(1, "Slug do produto é obrigatório"),
 });
 
 export const deleteProductInput = z.object({

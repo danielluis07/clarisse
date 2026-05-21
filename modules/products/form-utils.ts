@@ -6,6 +6,7 @@ import type {
   ProductFormOutput,
   VariantFormInput,
 } from "@/modules/products/form-schema";
+import type { ProductImageColorOption } from "@/modules/media/types";
 
 export const parseReaisInput = (value: string) => {
   const trimmed = value.trim();
@@ -100,6 +101,8 @@ export const productImagesToSlots = (
     draft: {
       localId: image.id,
       assetId: image.mediaAssetId,
+      colorName: image.colorName,
+      colorHex: image.colorHex,
       altText: image.altText ?? image.mediaAsset.altText,
       position: image.position,
       isPrimary: image.isPrimary,
@@ -111,6 +114,8 @@ export const buildProductPayload = (
   values: ProductFormOutput,
   images: Array<{
     mediaAssetId: string;
+    colorName: string | null;
+    colorHex: string | null;
     altText: string | null;
     position: number;
     isPrimary: boolean;
@@ -172,3 +177,24 @@ export const splitTokens = (value: string) =>
     .split(/[\n,]+/g)
     .map((item) => item.trim())
     .filter(Boolean);
+
+export const getVariantColorOptions = (
+  variants: VariantFormInput[] = [],
+): ProductImageColorOption[] => {
+  const colors = new Map<string, ProductImageColorOption>();
+
+  variants.forEach((variant) => {
+    const colorName = variant.colorName.trim();
+    if (!colorName) return;
+
+    const colorKey = colorName.toLowerCase();
+    const colorHex = variant.colorHex?.trim() || null;
+    const existing = colors.get(colorKey);
+
+    if (!existing || (!existing.colorHex && colorHex)) {
+      colors.set(colorKey, { colorName, colorHex });
+    }
+  });
+
+  return Array.from(colors.values());
+};

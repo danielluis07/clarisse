@@ -19,6 +19,13 @@ import type {
 } from "@/modules/products/types";
 import { unique } from "@/modules/products/assertions";
 
+type ProductVariantRef = {
+  id: string;
+  sku: string;
+  colorName: string;
+  colorHex: string | null;
+};
+
 /**
  * Normalize variant data for database insertion
  */
@@ -59,17 +66,38 @@ export const normalizeImages = (images: ProductImagePayload[]) => {
 /**
  * Get variant references mapped by ID and SKU
  */
-export const getVariantRefs = async (productId: string) => {
-  const variants = await db
-    .select({ id: productVariants.id, sku: productVariants.sku })
+export const getVariantRefs = async (
+  productId: string,
+  source: Pick<typeof db, "select"> = db,
+) => {
+  const variants = await source
+    .select({
+      id: productVariants.id,
+      sku: productVariants.sku,
+      colorName: productVariants.colorName,
+      colorHex: productVariants.colorHex,
+    })
     .from(productVariants)
     .where(eq(productVariants.productId, productId));
+  const colorsByName = new Map<string, ProductVariantRef>();
+
+  variants.forEach((variant) => {
+    const colorKey = normalizeColorKey(variant.colorName);
+    const existing = colorsByName.get(colorKey);
+
+    if (!existing || (!existing.colorHex && variant.colorHex)) {
+      colorsByName.set(colorKey, variant);
+    }
+  });
 
   return {
     byId: new Map(variants.map((variant) => [variant.id, variant])),
     bySku: new Map(variants.map((variant) => [variant.sku, variant])),
+    colorsByName,
   };
 };
+
+const normalizeColorKey = (value: string) => value.trim().toLowerCase();
 
 /**
  * Resolve variant ID from image payload using variant ID or SKU
@@ -105,6 +133,56 @@ export const resolveImageVariantId = (
   }
 
   return variantById?.id ?? variantBySku?.id ?? null;
+};
+
+/**
+ * Resolve color metadata from an explicit image color or its legacy variant link
+ */
+export const resolveImageColor = (
+  image: ProductImagePayload,
+  refs: Awaited<ReturnType<typeof getVariantRefs>>,
+) => {
+  const variantById = image.variantId ? refs.byId.get(image.variantId) : null;
+  const variantBySku = image.variantSku
+    ? refs.bySku.get(image.variantSku)
+    : null;
+  const variant = variantById ?? variantBySku ?? null;
+  const colorName = image.colorName?.trim() || variant?.colorName || null;
+
+  if (!colorName) {
+    if (image.colorHex) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Nome da cor da imagem é obrigatório quando o hex é informado",
+      });
+    }
+
+    return { colorName: null, colorHex: null };
+  }
+
+  const color = refs.colorsByName.get(normalizeColorKey(colorName));
+
+  if (!color) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Cor de imagem não pertence ao produto: ${colorName}`,
+    });
+  }
+
+  if (
+    variant &&
+    normalizeColorKey(variant.colorName) !== normalizeColorKey(color.colorName)
+  ) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "A imagem informa variante e cor conflitantes",
+    });
+  }
+
+  return {
+    colorName: color.colorName,
+    colorHex: color.colorHex ?? image.colorHex ?? null,
+  };
 };
 
 /**
@@ -206,6 +284,7 @@ export const insertProductImages = async (
     .insert(productImages)
     .values(
       normalized.map((image) => ({
+        ...resolveImageColor(image, refs),
         productId,
         mediaAssetId: image.mediaAssetId,
         variantId: resolveImageVariantId(image, refs),

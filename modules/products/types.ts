@@ -9,6 +9,8 @@ export type ProductListItem = ProductsOutput["data"][number];
 
 export type ProductInput = RouterInput["products"]["get"];
 export type ProductOutput = RouterOutput["products"]["get"];
+export type StoreProductInput = RouterInput["products"]["getStoreProduct"];
+export type StoreProductOutput = RouterOutput["products"]["getStoreProduct"];
 export type ProductFormOptionsOutput =
   RouterOutput["products"]["formOptions"];
 
@@ -36,6 +38,8 @@ export type ProductImagePayload = {
   mediaAssetId: string;
   variantId?: string | null;
   variantSku?: string | null;
+  colorName?: string | null;
+  colorHex?: string | null;
   altText?: string | null;
   position?: number;
   isPrimary?: boolean;

@@ -54,9 +54,16 @@ export type ProductImageDraft = {
   localId: string;
   /** present once the underlying file has been uploaded */
   assetId: string | null;
+  colorName: string | null;
+  colorHex: string | null;
   altText: string | null;
   position: number;
   isPrimary: boolean;
+};
+
+export type ProductImageColorOption = {
+  colorName: string;
+  colorHex: string | null;
 };
 
 export type BannerImageValue = {

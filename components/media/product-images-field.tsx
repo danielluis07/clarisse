@@ -7,8 +7,17 @@ import { MediaUploader } from "@/components/media/media-uploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type {
+  ProductImageColorOption,
   MediaSelectionItem,
   ProductImageDraft,
 } from "@/modules/media/types";
@@ -42,6 +51,7 @@ export const ProductImagesField = ({
   maxImages = 8,
   disabled,
   className,
+  colorOptions = [],
 }: {
   value: ProductImageSlot[];
   onChange: (value: ProductImageSlot[]) => void;
@@ -49,6 +59,7 @@ export const ProductImagesField = ({
   maxImages?: number;
   disabled?: boolean;
   className?: string;
+  colorOptions?: ProductImageColorOption[];
 }) => {
   const selectionValue = value.map((slot) => slot.selection);
 
@@ -68,6 +79,8 @@ export const ProductImagesField = ({
           localId: selection.localId,
           assetId:
             selection.kind === "existing" ? selection.assetId : null,
+          colorName: null,
+          colorHex: null,
           altText: selection.altText,
           position: 0,
           isPrimary: false,
@@ -146,6 +159,13 @@ export const ProductImagesField = ({
             onAltChange={(altText) =>
               updateDraft(slot.draft.localId, { altText })
             }
+            colorOptions={colorOptions}
+            onColorChange={(color) =>
+              updateDraft(slot.draft.localId, {
+                colorName: color?.colorName ?? null,
+                colorHex: color?.colorHex ?? null,
+              })
+            }
             onRemove={onRemove}
           />
         );
@@ -163,6 +183,8 @@ const ProductImageCard = ({
   onMoveRight,
   onSetPrimary,
   onAltChange,
+  colorOptions,
+  onColorChange,
   onRemove,
 }: {
   slot: ProductImageSlot;
@@ -173,6 +195,8 @@ const ProductImageCard = ({
   onMoveRight: () => void;
   onSetPrimary: () => void;
   onAltChange: (value: string | null) => void;
+  colorOptions: ProductImageColorOption[];
+  onColorChange: (value: ProductImageColorOption | null) => void;
   onRemove: () => void;
 }) => {
   const previewUrl =
@@ -184,6 +208,7 @@ const ProductImageCard = ({
       ? slot.selection.filename
       : slot.selection.file.name;
   const isPending = slot.selection.kind === "pending";
+  const allColorsValue = "__all_colors";
 
   return (
     <div
@@ -261,6 +286,49 @@ const ProductImageCard = ({
             <Trash2 />
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label
+          htmlFor={`color-${slot.draft.localId}`}
+          className="text-[11px] text-muted-foreground">
+          Cor
+        </Label>
+        <Select
+          value={slot.draft.colorName ?? allColorsValue}
+          onValueChange={(value) => {
+            const selected = colorOptions.find(
+              (color) => color.colorName === value,
+            );
+            onColorChange(selected ?? null);
+          }}
+          disabled={disabled}>
+          <SelectTrigger
+            id={`color-${slot.draft.localId}`}
+            size="sm"
+            className="h-7 w-full text-xs">
+            <SelectValue placeholder="Todas as cores" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={allColorsValue}>Todas as cores</SelectItem>
+              {colorOptions.map((color) => (
+                <SelectItem key={color.colorName} value={color.colorName}>
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    {color.colorHex && (
+                      <span
+                        aria-hidden="true"
+                        className="size-3 shrink-0 rounded-full border border-border"
+                        style={{ backgroundColor: color.colorHex }}
+                      />
+                    )}
+                    <span className="truncate">{color.colorName}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1">

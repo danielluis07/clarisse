@@ -7,6 +7,7 @@ import {
   ProductImagesField,
   type ProductImageSlot,
 } from "@/components/media/product-images-field";
+import type { ProductImageColorOption } from "@/modules/media/types";
 import {
   Card,
   CardContent,
@@ -57,6 +58,7 @@ export const ProductFormGrid = ({
   imageSlots,
   onImageSlotsChange,
   onAssetRemoved,
+  imageColorOptions,
   options,
   variantsSlot,
 }: {
@@ -66,6 +68,7 @@ export const ProductFormGrid = ({
   imageSlots: ProductImageSlot[];
   onImageSlotsChange: (slots: ProductImageSlot[]) => void;
   onAssetRemoved: (assetId: string) => void;
+  imageColorOptions: ProductImageColorOption[];
   options: {
     categories: Array<{ id: string; name: string; isActive: boolean }>;
     collections: Array<{
@@ -438,6 +441,7 @@ export const ProductFormGrid = ({
               onAssetRemoved={onAssetRemoved}
               disabled={isSubmitting}
               maxImages={12}
+              colorOptions={imageColorOptions}
             />
           </Field>
         </CardContent>

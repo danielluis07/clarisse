@@ -40,6 +40,7 @@ import {
   deleteProductVariantInput,
   deleteProductsInput,
   getProductInput,
+  getStoreProductInput,
   listInventoryInput,
   listProductsInput,
   replaceProductVariantsInput,
@@ -67,7 +68,7 @@ import {
   productVariantSelect,
 } from "@/modules/products/queries";
 import { rethrowProductWriteError } from "@/modules/products/errors";
-import { adminProcedure, createTRPCRouter } from "@/trpc/init";
+import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
 
 export const productsRouter = createTRPCRouter({
   formOptions: adminProcedure.query(async () => {
@@ -211,6 +212,8 @@ export const productsRouter = createTRPCRouter({
               productId: productImages.productId,
               id: productImages.id,
               mediaAssetId: productImages.mediaAssetId,
+              colorName: productImages.colorName,
+              colorHex: productImages.colorHex,
               altText: productImages.altText,
               position: productImages.position,
               isPrimary: productImages.isPrimary,
@@ -276,6 +279,8 @@ export const productsRouter = createTRPCRouter({
             ? {
                 id: primaryImage.id,
                 mediaAssetId: primaryImage.mediaAssetId,
+                colorName: primaryImage.colorName,
+                colorHex: primaryImage.colorHex,
                 altText: primaryImage.altText ?? primaryImage.assetAltText,
                 position: primaryImage.position,
                 isPrimary: primaryImage.isPrimary,
@@ -326,6 +331,8 @@ export const productsRouter = createTRPCRouter({
           id: productImages.id,
           productId: productImages.productId,
           variantId: productImages.variantId,
+          colorName: productImages.colorName,
+          colorHex: productImages.colorHex,
           mediaAssetId: productImages.mediaAssetId,
           altText: productImages.altText,
           position: productImages.position,
@@ -385,6 +392,8 @@ export const productsRouter = createTRPCRouter({
         id: image.id,
         productId: image.productId,
         variantId: image.variantId,
+        colorName: image.colorName,
+        colorHex: image.colorHex,
         mediaAssetId: image.mediaAssetId,
         altText: image.altText,
         position: image.position,
@@ -403,6 +412,176 @@ export const productsRouter = createTRPCRouter({
       collections: productCollections,
     };
   }),
+
+  getStoreProduct: baseProcedure
+    .input(getStoreProductInput)
+    .query(async ({ input }) => {
+      const [row] = await db
+        .select({
+          id: products.id,
+          name: products.name,
+          slug: products.slug,
+          subtitle: products.subtitle,
+          description: products.description,
+          status: products.status,
+          categoryId: products.categoryId,
+          basePriceCents: products.basePriceCents,
+          compareAtPriceCents: products.compareAtPriceCents,
+          currency: products.currency,
+          isFeatured: products.isFeatured,
+          material: products.material,
+          fit: products.fit,
+          careInstructions: products.careInstructions,
+          seoTitle: products.seoTitle,
+          seoDescription: products.seoDescription,
+          publishedAt: products.publishedAt,
+          createdAt: products.createdAt,
+          updatedAt: products.updatedAt,
+          categoryName: categories.name,
+          categorySlug: categories.slug,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(and(eq(products.slug, input.slug), eq(products.status, "active")))
+        .limit(1);
+
+      if (!row) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Produto não encontrado",
+        });
+      }
+
+      const [variants, images, productCollections] = await Promise.all([
+        db
+          .select(productVariantSelect)
+          .from(productVariants)
+          .where(
+            and(
+              eq(productVariants.productId, row.id),
+              eq(productVariants.isActive, true),
+            ),
+          )
+          .orderBy(asc(productVariants.displayOrder), asc(productVariants.id)),
+        db
+          .select({
+            id: productImages.id,
+            productId: productImages.productId,
+            variantId: productImages.variantId,
+            colorName: productImages.colorName,
+            colorHex: productImages.colorHex,
+            mediaAssetId: productImages.mediaAssetId,
+            altText: productImages.altText,
+            position: productImages.position,
+            isPrimary: productImages.isPrimary,
+            createdAt: productImages.createdAt,
+            assetUrl: mediaAssets.url,
+            assetFilename: mediaAssets.filename,
+            assetAltText: mediaAssets.altText,
+            assetMimeType: mediaAssets.mimeType,
+            assetWidth: mediaAssets.width,
+            assetHeight: mediaAssets.height,
+          })
+          .from(productImages)
+          .innerJoin(
+            mediaAssets,
+            eq(productImages.mediaAssetId, mediaAssets.id),
+          )
+          .where(eq(productImages.productId, row.id))
+          .orderBy(
+            desc(productImages.isPrimary),
+            asc(productImages.position),
+            asc(productImages.id),
+          ),
+        db
+          .select({
+            id: collections.id,
+            name: collections.name,
+            slug: collections.slug,
+            description: collections.description,
+            imageId: collections.imageId,
+            isFeatured: collections.isFeatured,
+            displayOrder: productsToCollections.displayOrder,
+          })
+          .from(productsToCollections)
+          .innerJoin(
+            collections,
+            eq(productsToCollections.collectionId, collections.id),
+          )
+          .where(
+            and(
+              eq(productsToCollections.productId, row.id),
+              eq(collections.isActive, true),
+            ),
+          )
+          .orderBy(
+            asc(productsToCollections.displayOrder),
+            asc(collections.name),
+          ),
+      ]);
+
+      const imageItems = images.map((image) => ({
+        id: image.id,
+        productId: image.productId,
+        variantId: image.variantId,
+        colorName: image.colorName,
+        colorHex: image.colorHex,
+        mediaAssetId: image.mediaAssetId,
+        altText: image.altText,
+        position: image.position,
+        isPrimary: image.isPrimary,
+        createdAt: image.createdAt,
+        mediaAsset: {
+          id: image.mediaAssetId,
+          url: image.assetUrl,
+          filename: image.assetFilename,
+          altText: image.assetAltText,
+          mimeType: image.assetMimeType,
+          width: image.assetWidth,
+          height: image.assetHeight,
+        },
+      }));
+      const colorsByName = new Map<
+        string,
+        { colorName: string; colorHex: string | null }
+      >();
+
+      variants.forEach((variant) => {
+        const colorKey = variant.colorName.trim().toLowerCase();
+        const existing = colorsByName.get(colorKey);
+
+        if (!existing || (!existing.colorHex && variant.colorHex)) {
+          colorsByName.set(colorKey, {
+            colorName: variant.colorName,
+            colorHex: variant.colorHex,
+          });
+        }
+      });
+
+      return {
+        ...mapProductRow(row),
+        primaryImage:
+          imageItems.find((image) => image.isPrimary) ?? imageItems[0] ?? null,
+        images: imageItems,
+        colorImageSets: Array.from(colorsByName.entries()).map(
+          ([colorKey, color]) => ({
+            ...color,
+            images: imageItems.filter(
+              (image) =>
+                image.colorName?.trim().toLowerCase() === colorKey,
+            ),
+          }),
+        ),
+        variants: variants.map((variant) => ({
+          ...variant,
+          stockState: getVariantStockState(
+            variant.stockQuantity,
+            variant.lowStockThreshold,
+          ),
+        })),
+        collections: productCollections,
+      };
+    }),
 
   create: adminProcedure
     .input(createProductInput)
@@ -446,19 +625,14 @@ export const productsRouter = createTRPCRouter({
             });
           }
 
-          const variants = await tx
+          await tx
             .insert(productVariants)
             .values(
               input.variants.map((variant, index) =>
                 normalizeVariantValues(product.id, variant, index),
               ),
-            )
-            .returning(productVariantSelect);
-
-          const refs = {
-            byId: new Map(variants.map((variant) => [variant.id, variant])),
-            bySku: new Map(variants.map((variant) => [variant.sku, variant])),
-          };
+            );
+          const refs = await getVariantRefs(product.id, tx);
 
           await insertProductCollections(tx, product.id, input.collectionIds);
           await insertProductImages(tx, product.id, input.images, refs);
@@ -512,8 +686,6 @@ export const productsRouter = createTRPCRouter({
           : Promise.resolve(),
         images ? assertImageAssetsExist(images) : Promise.resolve(),
       ]);
-
-      const refs = images ? await getVariantRefs(id) : null;
 
       try {
         const data = await db.transaction(async (tx) => {
@@ -589,13 +761,6 @@ export const productsRouter = createTRPCRouter({
             await insertProductCollections(tx, id, collectionIds);
           }
 
-          if (images && refs) {
-            await tx
-              .delete(productImages)
-              .where(eq(productImages.productId, id));
-            await insertProductImages(tx, id, images, refs);
-          }
-
           if (variants) {
             const existingVariants = await tx
               .select({ id: productVariants.id })
@@ -667,6 +832,15 @@ export const productsRouter = createTRPCRouter({
                   ),
                 );
             }
+          }
+
+          if (images) {
+            const refs = await getVariantRefs(id, tx);
+
+            await tx
+              .delete(productImages)
+              .where(eq(productImages.productId, id));
+            await insertProductImages(tx, id, images, refs);
           }
 
           return product;
