@@ -68,6 +68,24 @@ export const useCreateProduct = () => {
   );
 };
 
+export const useUpdateProductStatus = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.products.update.mutationOptions({
+      onSuccess: (product) => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.products.list.queryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: trpc.products.get.queryKey({ id: product.id }),
+        });
+      },
+    }),
+  );
+};
+
 export const useUpdateProduct = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

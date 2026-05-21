@@ -14,15 +14,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { centsToReais } from "@/lib/utils";
+import { ProductStatusCell } from "@/modules/products/components/product-status-cell";
 import { ProductsCellAction } from "@/modules/products/components/products-cell-action";
 import type { ProductListItem } from "@/modules/products/types";
-import { getProductStatusLabel } from "@/modules/products/utils";
-
-const STATUS_DOT_CLASS: Record<ProductListItem["status"], string> = {
-  draft: "bg-muted-foreground/40",
-  active: "bg-primary",
-  archived: "bg-destructive/60",
-};
 
 export const columns: ColumnDef<ProductListItem>[] = [
   {
@@ -139,19 +133,9 @@ export const columns: ColumnDef<ProductListItem>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => {
-      const status = row.original.status;
-
-      return (
-        <span className="inline-flex items-center gap-2 text-sm">
-          <span
-            aria-hidden
-            className={`size-2 rounded-full ${STATUS_DOT_CLASS[status]}`}
-          />
-          {getProductStatusLabel(status)}
-        </span>
-      );
-    },
+    cell: ({ row }) => (
+      <ProductStatusCell id={row.original.id} status={row.original.status} />
+    ),
   },
   {
     accessorKey: "basePriceCents",

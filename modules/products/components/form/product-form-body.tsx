@@ -1,10 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { type ChangeEvent, useMemo, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -17,8 +17,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
@@ -37,7 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { compressImageToWebP } from "@/lib/utils";
+import { centsToReais, compressImageToWebP } from "@/lib/utils";
 import { analyzeProductImagesAction } from "@/modules/products/ai-actions";
 import {
   productFormSchema,
@@ -72,6 +74,34 @@ import { normalizeSkuPart } from "@/modules/products/utils";
 type ProductImageAnalysisSuggestion = Awaited<
   ReturnType<typeof analyzeProductImagesAction>
 >;
+
+type VariantSharedDefaults = Pick<
+  VariantFormInput,
+  | "price"
+  | "compareAtPrice"
+  | "stockQuantity"
+  | "lowStockThreshold"
+  | "weightGrams"
+  | "isActive"
+>;
+
+const getVariantSharedDefaults = (
+  variant: VariantFormInput,
+): VariantSharedDefaults => ({
+  price: variant.price ?? "",
+  compareAtPrice: variant.compareAtPrice ?? "",
+  stockQuantity: variant.stockQuantity ?? "0",
+  lowStockThreshold: variant.lowStockThreshold ?? "5",
+  weightGrams: variant.weightGrams ?? "",
+  isActive: variant.isActive ?? true,
+});
+
+const toReaisDisplayValue = (value: string | number | null | undefined) => {
+  if (value == null || value === "") return "";
+  if (typeof value === "number") return centsToReais(value);
+
+  return value;
+};
 
 const getImageSelectionKey = (slot: ProductImageSlot) =>
   slot.selection.kind === "existing"
@@ -115,6 +145,10 @@ export const ProductFormBody = ({
   const [colorDraft, setColorDraft] = useState("Preto #111111, Off White");
   const [sizeDraft, setSizeDraft] = useState("PP, P, M, G");
   const [skuPrefix, setSkuPrefix] = useState("");
+  const [variantDefaults, setVariantDefaults] = useState<VariantSharedDefaults>(
+    () =>
+      getVariantSharedDefaults(defaultValues.variants[0] ?? defaultVariant()),
+  );
 
   const {
     control,
@@ -519,6 +553,48 @@ export const ProductFormBody = ({
     }
   };
 
+  const updateVariantDefault = <Key extends keyof VariantSharedDefaults>(
+    key: Key,
+    value: VariantSharedDefaults[Key],
+  ) => {
+    setVariantDefaults((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
+
+  const handleVariantDefaultAmountChange =
+    (key: "price" | "compareAtPrice") =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const rawValue = event.target.value.replace(/\D/g, "");
+      updateVariantDefault(key, rawValue ? Number.parseInt(rawValue, 10) : "");
+    };
+
+  const buildVariantWithDefaults = (
+    overrides: Partial<VariantFormInput> = {},
+  ): VariantFormInput => ({
+    ...defaultVariant(),
+    ...variantDefaults,
+    ...overrides,
+  });
+
+  const handleApplyVariantDefaults = () => {
+    const current = getValues("variants");
+
+    if (!current.length) {
+      toast.error("Adicione ao menos uma variante.");
+      return;
+    }
+
+    replace(
+      current.map((variant) => ({
+        ...variant,
+        ...variantDefaults,
+      })),
+    );
+    toast.success("Valores padrão aplicados à grade.");
+  };
+
   const handleGenerateVariants = () => {
     const colors = splitTokens(colorDraft).map(parseColorToken);
     const sizes = splitTokens(sizeDraft);
@@ -545,13 +621,14 @@ export const ProductFormBody = ({
         const optionKey = `${color.colorName.toLowerCase()}::${size.toLowerCase()}`;
         if (existingByOption.has(optionKey)) return;
 
-        generated.push({
-          ...defaultVariant(),
-          sku: `${baseSku}-${normalizeSkuPart(color.colorName) || "COR"}-${normalizeSkuPart(size) || "TAM"}`,
-          colorName: color.colorName,
-          colorHex: color.colorHex,
-          size,
-        });
+        generated.push(
+          buildVariantWithDefaults({
+            sku: `${baseSku}-${normalizeSkuPart(color.colorName) || "COR"}-${normalizeSkuPart(size) || "TAM"}`,
+            colorName: color.colorName,
+            colorHex: color.colorHex,
+            size,
+          }),
+        );
       });
     });
 
@@ -601,9 +678,6 @@ export const ProductFormBody = ({
               Excluir
             </Button>
           )}
-          <Button asChild variant="outline">
-            <Link href={backHref}>Cancelar</Link>
-          </Button>
           {mode === "create" && (
             <Button
               type="button"
@@ -700,6 +774,129 @@ export const ProductFormBody = ({
                 </FieldGroup>
               </FieldSet>
 
+              <FieldSet className="rounded-lg border bg-muted/20 p-4">
+                <FieldLegend variant="label">Valores padrão</FieldLegend>
+                <FieldDescription>
+                  Preço, estoque e status usados nas novas combinações.
+                </FieldDescription>
+                <FieldGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+                  <Field>
+                    <FieldLabel htmlFor="variant-default-price">
+                      Preço
+                    </FieldLabel>
+                    <Input
+                      id="variant-default-price"
+                      type="text"
+                      inputMode="decimal"
+                      value={toReaisDisplayValue(variantDefaults.price)}
+                      onChange={handleVariantDefaultAmountChange("price")}
+                      placeholder="R$ 0,00"
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="variant-default-compareAtPrice">
+                      Comparação
+                    </FieldLabel>
+                    <Input
+                      id="variant-default-compareAtPrice"
+                      type="text"
+                      inputMode="decimal"
+                      value={toReaisDisplayValue(
+                        variantDefaults.compareAtPrice,
+                      )}
+                      onChange={handleVariantDefaultAmountChange(
+                        "compareAtPrice",
+                      )}
+                      placeholder="R$ 0,00"
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="variant-default-stockQuantity">
+                      Estoque
+                    </FieldLabel>
+                    <Input
+                      id="variant-default-stockQuantity"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={variantDefaults.stockQuantity}
+                      onChange={(event) =>
+                        updateVariantDefault(
+                          "stockQuantity",
+                          event.target.value,
+                        )
+                      }
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="variant-default-lowStockThreshold">
+                      Baixo
+                    </FieldLabel>
+                    <Input
+                      id="variant-default-lowStockThreshold"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={variantDefaults.lowStockThreshold}
+                      onChange={(event) =>
+                        updateVariantDefault(
+                          "lowStockThreshold",
+                          event.target.value,
+                        )
+                      }
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="variant-default-weightGrams">
+                      Peso g
+                    </FieldLabel>
+                    <Input
+                      id="variant-default-weightGrams"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={variantDefaults.weightGrams}
+                      onChange={(event) =>
+                        updateVariantDefault("weightGrams", event.target.value)
+                      }
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                  <Field orientation="horizontal" className="self-end pb-1">
+                    <Checkbox
+                      id="variant-default-isActive"
+                      checked={variantDefaults.isActive}
+                      onCheckedChange={(checked) =>
+                        updateVariantDefault("isActive", checked === true)
+                      }
+                      disabled={isSubmitting}
+                    />
+                    <FieldContent>
+                      <FieldLabel htmlFor="variant-default-isActive">
+                        Ativa
+                      </FieldLabel>
+                    </FieldContent>
+                  </Field>
+                </FieldGroup>
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isSubmitting}
+                    onClick={handleApplyVariantDefaults}>
+                    <Check data-icon="inline-start" />
+                    Aplicar à grade
+                  </Button>
+                </div>
+              </FieldSet>
+
               <Field data-invalid={!!errors.variants}>
                 <div className="flex items-center justify-between gap-3">
                   <FieldLabel>Grade de variantes</FieldLabel>
@@ -708,7 +905,7 @@ export const ProductFormBody = ({
                     variant="outline"
                     size="sm"
                     disabled={isSubmitting}
-                    onClick={() => append(defaultVariant())}>
+                    onClick={() => append(buildVariantWithDefaults())}>
                     <Plus data-icon="inline-start" />
                     Variante
                   </Button>
