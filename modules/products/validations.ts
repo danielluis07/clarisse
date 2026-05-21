@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PAGINATION } from "@/constants";
+import { MAX_ANALYSIS_IMAGES, PAGINATION } from "@/constants";
 
 export const productStatusSchema = z.enum(["draft", "active", "archived"]);
 export const productSortBySchema = z.enum([
@@ -557,3 +557,81 @@ export const inventorySearchParamsSchema = z.object({
   isActive: booleanSearchParam.optional(),
   stockStatus: inventoryStockStatusSchema.optional(),
 });
+
+// --- AI image analysis schemas ---
+
+const nullableShortText = (maxLength: number) =>
+  z.string().trim().max(maxLength).nullable();
+
+const colorHexOutput = z
+  .string()
+  .trim()
+  .regex(/^#[0-9a-fA-F]{6}$/)
+  .nullable();
+
+export const productImageAnalysisSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  subtitle: z.string().trim().max(180),
+  description: z.string().trim().max(8000),
+  categoryId: nullableShortText(160),
+  collectionIds: z.array(z.string().trim().min(1).max(160)).max(12),
+  isFeatured: z.boolean(),
+  material: z.string().trim().max(500),
+  fit: z.string().trim().max(500),
+  careInstructions: z.string().trim().max(1000),
+  seoTitle: z.string().trim().max(160),
+  seoDescription: z.string().trim().max(300),
+  variants: z
+    .array(
+      z.object({
+        sku: z.string().trim().max(80),
+        colorName: z.string().trim().min(1).max(80),
+        colorHex: colorHexOutput,
+        size: z.string().trim().min(1).max(40),
+        stockQuantity: z.number().int().min(0),
+        lowStockThreshold: z.number().int().min(0),
+        weightGrams: z.number().int().min(0).nullable(),
+        isActive: z.boolean(),
+      }),
+    )
+    .min(1)
+    .max(80),
+  imageSuggestions: z
+    .array(
+      z.object({
+        imageIndex: z.number().int().min(0),
+        colorName: nullableShortText(80),
+        colorHex: colorHexOutput,
+        altText: z.string().trim().min(1).max(255),
+        isPrimary: z.boolean(),
+      }),
+    )
+    .max(MAX_ANALYSIS_IMAGES),
+});
+
+export const imageDescriptorSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("file"),
+    imageIndex: z.number().int().min(0),
+    filename: nullableShortText(255),
+    altText: nullableShortText(255),
+  }),
+  z.object({
+    kind: z.literal("url"),
+    imageIndex: z.number().int().min(0),
+    url: z.url(),
+    filename: nullableShortText(255),
+    altText: nullableShortText(255),
+  }),
+]);
+
+export const imageDescriptorsSchema = z
+  .array(imageDescriptorSchema)
+  .min(1, "Envie ao menos uma imagem para análise.")
+  .max(
+    MAX_ANALYSIS_IMAGES,
+    `Analise no máximo ${MAX_ANALYSIS_IMAGES} imagens.`,
+  );
+
+export type ImageDescriptor = z.infer<typeof imageDescriptorSchema>;
+export type ProductImageAnalysis = z.infer<typeof productImageAnalysisSchema>;

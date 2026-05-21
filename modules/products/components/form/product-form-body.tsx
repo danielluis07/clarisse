@@ -37,6 +37,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { compressImageToWebP } from "@/lib/utils";
+import { analyzeProductImagesAction } from "@/modules/products/ai-actions";
 import {
   productFormSchema,
   type ProductFormInput,
@@ -49,7 +51,6 @@ import {
   getProductFormDefaultValues,
   getProductFormErrorMessage,
   getVariantColorOptions,
-  normalizeSkuPart,
   parseColorToken,
   productImagesToSlots,
   splitTokens,
@@ -63,8 +64,25 @@ import {
 import type { ProductOutput } from "@/modules/products/types";
 import { useCommitMedia, useDeleteMedia } from "@/modules/media/hooks";
 import { useConfirm } from "@/providers/confirm-provider";
-import { ProductFormVariantRow } from "./product-form-variant-row";
-import { ProductFormGrid } from "./product-form-grid";
+import { ProductFormVariantRow } from "@/modules/products/components/form/product-form-variant-row";
+import { ProductFormGrid } from "@/modules/products/components/form/product-form-grid";
+import { MAX_ANALYSIS_IMAGES } from "@/constants";
+import { normalizeSkuPart } from "@/modules/products/utils";
+
+type ProductImageAnalysisSuggestion = Awaited<
+  ReturnType<typeof analyzeProductImagesAction>
+>;
+
+const getImageSelectionKey = (slot: ProductImageSlot) =>
+  slot.selection.kind === "existing"
+    ? `existing:${slot.selection.assetId}`
+    : [
+        "pending",
+        slot.selection.localId,
+        slot.selection.file.name,
+        slot.selection.file.size,
+        slot.selection.file.lastModified,
+      ].join(":");
 
 export const ProductFormBody = ({
   mode,
@@ -90,6 +108,10 @@ export const ProductFormBody = ({
   );
   const [orphanedAssetIds, setOrphanedAssetIds] = useState<string[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzedImageSignature, setAnalyzedImageSignature] = useState<
+    string | null
+  >(null);
   const [colorDraft, setColorDraft] = useState("Preto #111111, Off White");
   const [sizeDraft, setSizeDraft] = useState("PP, P, M, G");
   const [skuPrefix, setSkuPrefix] = useState("");
@@ -98,6 +120,7 @@ export const ProductFormBody = ({
     control,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<ProductFormInput, unknown, ProductFormOutput>({
     resolver: zodResolver(productFormSchema),
@@ -117,12 +140,20 @@ export const ProductFormBody = ({
     () => getVariantColorOptions(watchedVariants),
     [watchedVariants],
   );
+  const imageSelectionSignature = useMemo(
+    () => imageSlots.map(getImageSelectionKey).sort().join("|"),
+    [imageSlots],
+  );
+  const hasAnalyzedCurrentImages =
+    imageSelectionSignature !== "" &&
+    analyzedImageSignature === imageSelectionSignature;
 
-  const isSubmitting =
+  const isSaving =
     isCommitting ||
     createProduct.isPending ||
     updateProduct.isPending ||
     deleteProduct.isPending;
+  const isSubmitting = isSaving || isAnalyzing;
 
   const title = mode === "create" ? "Novo produto" : "Editar produto";
   const submitLabel = mode === "create" ? "Criar produto" : "Salvar produto";
@@ -288,6 +319,206 @@ export const ProductFormBody = ({
     }
   };
 
+  const buildAnalysisFormData = async () => {
+    const slots = imageSlots.slice(0, MAX_ANALYSIS_IMAGES);
+    const formData = new FormData();
+    const descriptors: Array<{
+      kind: "file" | "url";
+      imageIndex: number;
+      filename: string | null;
+      altText: string | null;
+      url?: string;
+    }> = [];
+
+    for (const [imageIndex, slot] of slots.entries()) {
+      const altText = slot.draft.altText ?? slot.selection.altText ?? null;
+
+      if (slot.selection.kind === "existing") {
+        descriptors.push({
+          kind: "url",
+          imageIndex,
+          url: slot.selection.url,
+          filename: slot.selection.filename,
+          altText,
+        });
+        continue;
+      }
+
+      const compressed = await compressImageToWebP(slot.selection.file);
+      descriptors.push({
+        kind: "file",
+        imageIndex,
+        filename: compressed.name,
+        altText,
+      });
+      formData.append(`image-${imageIndex}`, compressed, compressed.name);
+    }
+
+    formData.append("images", JSON.stringify(descriptors));
+    return formData;
+  };
+
+  const applyAnalysisSuggestion = (
+    suggestion: ProductImageAnalysisSuggestion,
+  ) => {
+    setValue("name", suggestion.name, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("subtitle", suggestion.subtitle, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("description", suggestion.description, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("categoryId", suggestion.categoryId, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("collectionIds", suggestion.collectionIds, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("isFeatured", suggestion.isFeatured, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("material", suggestion.material, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("fit", suggestion.fit, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("careInstructions", suggestion.careInstructions, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("seoTitle", suggestion.seoTitle, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("seoDescription", suggestion.seoDescription, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+
+    const currentVariants = getValues("variants");
+    const pricesByOption = new Map(
+      currentVariants.map((variant) => [
+        `${variant.colorName.trim().toLowerCase()}::${variant.size.trim().toLowerCase()}`,
+        {
+          price: variant.price,
+          compareAtPrice: variant.compareAtPrice,
+        },
+      ]),
+    );
+    const singleVariantPrices =
+      currentVariants.length === 1
+        ? {
+            price: currentVariants[0]?.price ?? "",
+            compareAtPrice: currentVariants[0]?.compareAtPrice ?? "",
+          }
+        : null;
+
+    replace(
+      suggestion.variants.map((variant) => {
+        const optionKey = `${variant.colorName.trim().toLowerCase()}::${variant.size.trim().toLowerCase()}`;
+        const prices =
+          pricesByOption.get(optionKey) ??
+          (suggestion.variants.length === 1 ? singleVariantPrices : null);
+
+        return {
+          ...defaultVariant(),
+          sku: variant.sku,
+          colorName: variant.colorName,
+          colorHex: variant.colorHex ?? "",
+          size: variant.size,
+          price: prices?.price ?? "",
+          compareAtPrice: prices?.compareAtPrice ?? "",
+          stockQuantity: String(variant.stockQuantity),
+          lowStockThreshold: String(variant.lowStockThreshold),
+          weightGrams:
+            variant.weightGrams == null ? "" : String(variant.weightGrams),
+          isActive: variant.isActive,
+        };
+      }),
+    );
+
+    const imageSuggestionsByIndex = new Map(
+      suggestion.imageSuggestions.map((imageSuggestion) => [
+        imageSuggestion.imageIndex,
+        imageSuggestion,
+      ]),
+    );
+    const primaryImageIndex =
+      suggestion.imageSuggestions.find(
+        (imageSuggestion) => imageSuggestion.isPrimary,
+      )?.imageIndex ?? 0;
+
+    setImageSlots((current) =>
+      current.map((slot, imageIndex) => {
+        const imageSuggestion = imageSuggestionsByIndex.get(imageIndex);
+        if (!imageSuggestion) {
+          return {
+            selection: slot.selection,
+            draft: {
+              ...slot.draft,
+              isPrimary: imageIndex === primaryImageIndex,
+            },
+          };
+        }
+
+        const altText = imageSuggestion.altText || slot.draft.altText;
+
+        return {
+          selection: {
+            ...slot.selection,
+            altText,
+          },
+          draft: {
+            ...slot.draft,
+            colorName: imageSuggestion.colorName,
+            colorHex: imageSuggestion.colorHex,
+            altText,
+            isPrimary: imageIndex === primaryImageIndex,
+          },
+        };
+      }),
+    );
+  };
+
+  const handleAnalyzeImages = async () => {
+    if (mode !== "create" || isSubmitting) return;
+
+    if (!imageSlots.length) {
+      toast.error("Adicione ao menos uma imagem para analisar.");
+      return;
+    }
+
+    if (imageSlots.length > MAX_ANALYSIS_IMAGES) {
+      toast(`Analisando as ${MAX_ANALYSIS_IMAGES} primeiras imagens.`);
+    }
+
+    setIsAnalyzing(true);
+    const signatureAtStart = imageSelectionSignature;
+
+    try {
+      const formData = await buildAnalysisFormData();
+      const suggestion = await analyzeProductImagesAction(formData);
+      applyAnalysisSuggestion(suggestion);
+      setAnalyzedImageSignature(signatureAtStart);
+      toast.success("Sugestões aplicadas ao produto.");
+    } catch (error) {
+      toast.error(getProductFormErrorMessage(error));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleGenerateVariants = () => {
     const colors = splitTokens(colorDraft).map(parseColorToken);
     const sizes = splitTokens(sizeDraft);
@@ -373,13 +604,30 @@ export const ProductFormBody = ({
           <Button asChild variant="outline">
             <Link href={backHref}>Cancelar</Link>
           </Button>
+          {mode === "create" && (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={
+                isSubmitting || !imageSlots.length || hasAnalyzedCurrentImages
+              }
+              onClick={handleAnalyzeImages}
+              className="w-44">
+              {isAnalyzing ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Sparkles data-icon="inline-start" />
+              )}
+              {isAnalyzing ? "Analisando" : "Analisar imagens"}
+            </Button>
+          )}
           <Button type="submit" disabled={isSubmitting} className="w-40">
-            {isSubmitting ? (
+            {isSaving ? (
               <Spinner data-icon="inline-start" />
             ) : (
               <Save data-icon="inline-start" />
             )}
-            {isSubmitting ? "Salvando" : submitLabel}
+            {isSaving ? "Salvando" : submitLabel}
           </Button>
         </div>
       </header>

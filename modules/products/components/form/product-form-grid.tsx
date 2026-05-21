@@ -85,6 +85,28 @@ export const ProductFormGrid = ({
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader className="border-b">
+          <CardTitle className="font-admin">Imagens</CardTitle>
+          <CardDescription>
+            Fotos de produto, detalhes e variações visuais.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Field>
+            <FieldLabel>Galeria do produto</FieldLabel>
+            <ProductImagesField
+              value={imageSlots}
+              onChange={onImageSlotsChange}
+              onAssetRemoved={onAssetRemoved}
+              disabled={isSubmitting}
+              maxImages={12}
+              colorOptions={imageColorOptions}
+            />
+          </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="border-b">
           <CardTitle className="font-admin">Informações editoriais</CardTitle>
           <CardDescription>
             Conteúdo principal apresentado no cadastro e na vitrine.
@@ -359,9 +381,7 @@ export const ProductFormGrid = ({
                       onChange={(e) => formatReaisInput(e, field)}
                     />
                     <FieldError
-                      errors={
-                        errors.basePrice ? [errors.basePrice] : undefined
-                      }
+                      errors={errors.basePrice ? [errors.basePrice] : undefined}
                     />
                   </Field>
                 )}
@@ -425,28 +445,6 @@ export const ProductFormGrid = ({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle className="font-admin">Imagens</CardTitle>
-          <CardDescription>
-            Fotos de produto, detalhes e variações visuais.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Field>
-            <FieldLabel>Galeria do produto</FieldLabel>
-            <ProductImagesField
-              value={imageSlots}
-              onChange={onImageSlotsChange}
-              onAssetRemoved={onAssetRemoved}
-              disabled={isSubmitting}
-              maxImages={12}
-              colorOptions={imageColorOptions}
-            />
-          </Field>
-        </CardContent>
-      </Card>
-
       {variantsSlot}
 
       <Card>
@@ -493,9 +491,7 @@ export const ProductFormGrid = ({
                     disabled={isSubmitting}
                     {...field}
                   />
-                  <FieldError
-                    errors={errors.fit ? [errors.fit] : undefined}
-                  />
+                  <FieldError errors={errors.fit ? [errors.fit] : undefined} />
                 </Field>
               )}
             />
