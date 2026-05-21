@@ -51,7 +51,6 @@ import {
   getProductFormDefaultValues,
   getProductFormErrorMessage,
   getVariantColorOptions,
-  normalizeSkuPart,
   parseColorToken,
   productImagesToSlots,
   splitTokens,
@@ -65,10 +64,10 @@ import {
 import type { ProductOutput } from "@/modules/products/types";
 import { useCommitMedia, useDeleteMedia } from "@/modules/media/hooks";
 import { useConfirm } from "@/providers/confirm-provider";
-import { ProductFormVariantRow } from "./product-form-variant-row";
-import { ProductFormGrid } from "./product-form-grid";
-
-const MAX_ANALYSIS_IMAGES = 8;
+import { ProductFormVariantRow } from "@/modules/products/components/form/product-form-variant-row";
+import { ProductFormGrid } from "@/modules/products/components/form/product-form-grid";
+import { MAX_ANALYSIS_IMAGES } from "@/constants";
+import { normalizeSkuPart } from "@/modules/products/utils";
 
 type ProductImageAnalysisSuggestion = Awaited<
   ReturnType<typeof analyzeProductImagesAction>
@@ -505,12 +504,13 @@ export const ProductFormBody = ({
     }
 
     setIsAnalyzing(true);
-    setAnalyzedImageSignature(imageSelectionSignature);
+    const signatureAtStart = imageSelectionSignature;
 
     try {
       const formData = await buildAnalysisFormData();
       const suggestion = await analyzeProductImagesAction(formData);
       applyAnalysisSuggestion(suggestion);
+      setAnalyzedImageSignature(signatureAtStart);
       toast.success("Sugestões aplicadas ao produto.");
     } catch (error) {
       toast.error(getProductFormErrorMessage(error));

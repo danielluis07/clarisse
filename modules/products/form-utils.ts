@@ -154,14 +154,6 @@ export const buildProductPayload = (
   images,
 });
 
-export const normalizeSkuPart = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 export const parseColorToken = (token: string) => {
   const hex = token.match(/#[0-9a-fA-F]{6}/)?.[0].toUpperCase() ?? "";
   const name = token.replace(/#[0-9a-fA-F]{6}/, "").trim();

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PAGINATION } from "@/constants";
+import { MAX_ANALYSIS_IMAGES, PAGINATION } from "@/constants";
 
 export const productStatusSchema = z.enum(["draft", "active", "archived"]);
 export const productSortBySchema = z.enum([
@@ -559,8 +559,6 @@ export const inventorySearchParamsSchema = z.object({
 });
 
 // --- AI image analysis schemas ---
-
-export const MAX_ANALYSIS_IMAGES = 8;
 
 const nullableShortText = (maxLength: number) =>
   z.string().trim().max(maxLength).nullable();

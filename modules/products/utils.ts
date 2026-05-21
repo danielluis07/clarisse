@@ -123,7 +123,9 @@ export const buildVariantLabel = ({
 
 // --- AI image analysis helpers ---
 
-export const parseImageDescriptors = (formData: FormData): ImageDescriptor[] => {
+export const parseImageDescriptors = (
+  formData: FormData,
+): ImageDescriptor[] => {
   const raw = formData.get("images");
 
   if (typeof raw !== "string") {
@@ -171,7 +173,10 @@ export const getImageInput = async (
       throw new Error("Tipo de imagem não permitido.");
     }
 
-    if (file.size <= 0 || file.size > MAX_FILE_SIZE_BYTES.value) {
+    if (file.size <= 0) {
+      throw new Error("Arquivo de imagem vazio.");
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES.value) {
       throw new Error(
         `Imagem muito grande. Máximo: ${MAX_FILE_SIZE_BYTES.label}.`,
       );
@@ -254,7 +259,8 @@ export const sanitizeAnalysis = (
     material: truncate(output.material, 500),
     fit: truncate(output.fit, 500),
     careInstructions: truncate(output.careInstructions, 1000),
-    seoTitle: truncate(output.seoTitle, 160) || `${name} | Clarisse`,
+    seoTitle:
+      truncate(output.seoTitle, 160) || truncate(`${name} | Clarisse`, 160),
     seoDescription: truncate(output.seoDescription, 300),
     variants,
     imageSuggestions: imageSuggestions.filter(({ imageIndex }) =>
@@ -272,7 +278,7 @@ const sanitizeVariants = (
   const seenOptions = new Set<string>();
   const sanitized: ProductImageAnalysis["variants"] = [];
 
-  for (const [index, variant] of variants.entries()) {
+  for (const variant of variants) {
     const colorName = truncate(variant.colorName, 80) || "Default";
     const size = truncate(variant.size, 40) || "One Size";
     const optionKey = `${colorName.toLowerCase()}::${size.toLowerCase()}`;
@@ -281,12 +287,16 @@ const sanitizeVariants = (
     seenOptions.add(optionKey);
 
     const fallbackSku = `CLA-${normalizedProduct}-${normalizeSkuPart(colorName) || "COR"}-${normalizeSkuPart(size) || "TAM"}`;
-    let sku = normalizeSkuPart(variant.sku) || fallbackSku;
-    if (!sku.startsWith("CLA-")) sku = `CLA-${sku}`;
-    sku = truncate(sku, 80);
+    let skuBase = normalizeSkuPart(variant.sku) || fallbackSku;
+    if (!skuBase.startsWith("CLA-")) skuBase = `CLA-${skuBase}`;
+    skuBase = truncate(skuBase, 80);
 
+    let sku = skuBase;
+    let counter = 1;
     while (seenSkus.has(sku)) {
-      sku = truncate(`${sku}-${index + 1}`, 80);
+      const suffix = `-${counter}`;
+      sku = `${truncate(skuBase, 80 - suffix.length)}${suffix}`;
+      counter++;
     }
 
     seenSkus.add(sku);
@@ -372,7 +382,7 @@ const normalizeColorHex = (value: string | null) => {
   return /^#[0-9A-F]{6}$/.test(normalized) ? normalized : null;
 };
 
-const normalizeSkuPart = (value: string) =>
+export const normalizeSkuPart = (value: string) =>
   value
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
