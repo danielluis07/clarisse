@@ -41,6 +41,7 @@ import {
   deleteProductsInput,
   getProductInput,
   getStoreProductInput,
+  getStoreRelatedProductsInput,
   listInventoryInput,
   listProductsInput,
   replaceProductVariantsInput,
@@ -442,7 +443,9 @@ export const productsRouter = createTRPCRouter({
         })
         .from(products)
         .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(and(eq(products.slug, input.slug), eq(products.status, "active")))
+        .where(
+          and(eq(products.slug, input.slug), eq(products.status, "active")),
+        )
         .limit(1);
 
       if (!row) {
@@ -567,8 +570,7 @@ export const productsRouter = createTRPCRouter({
           ([colorKey, color]) => ({
             ...color,
             images: imageItems.filter(
-              (image) =>
-                image.colorName?.trim().toLowerCase() === colorKey,
+              (image) => image.colorName?.trim().toLowerCase() === colorKey,
             ),
           }),
         ),
@@ -581,6 +583,102 @@ export const productsRouter = createTRPCRouter({
         })),
         collections: productCollections,
       };
+    }),
+
+  getStoreRelatedProducts: baseProcedure
+    .input(getStoreRelatedProductsInput)
+    .query(async ({ input }) => {
+      const [current] = await db
+        .select({ id: products.id, categoryId: products.categoryId })
+        .from(products)
+        .where(
+          and(eq(products.slug, input.slug), eq(products.status, "active")),
+        )
+        .limit(1);
+
+      if (!current) return [];
+
+      const conditions = [
+        eq(products.status, "active"),
+        sql`${products.id} <> ${current.id}`,
+      ];
+
+      if (current.categoryId) {
+        conditions.push(eq(products.categoryId, current.categoryId));
+      }
+
+      const rows = await db
+        .select({
+          id: products.id,
+          name: products.name,
+          slug: products.slug,
+          basePriceCents: products.basePriceCents,
+          compareAtPriceCents: products.compareAtPriceCents,
+          currency: products.currency,
+          categoryName: categories.name,
+          categorySlug: categories.slug,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(and(...conditions))
+        .orderBy(desc(products.isFeatured), desc(products.publishedAt))
+        .limit(input.limit);
+
+      if (rows.length === 0) return [];
+
+      const ids = rows.map((row) => row.id);
+      const imageRows = await db
+        .select({
+          productId: productImages.productId,
+          isPrimary: productImages.isPrimary,
+          position: productImages.position,
+          colorName: productImages.colorName,
+          url: mediaAssets.url,
+          altText: mediaAssets.altText,
+        })
+        .from(productImages)
+        .innerJoin(mediaAssets, eq(productImages.mediaAssetId, mediaAssets.id))
+        .where(inArray(productImages.productId, ids))
+        .orderBy(
+          asc(productImages.productId),
+          desc(productImages.isPrimary),
+          asc(productImages.position),
+          asc(productImages.id),
+        );
+
+      const imagesByProductId = new Map<string, typeof imageRows>();
+      imageRows.forEach((image) => {
+        const list = imagesByProductId.get(image.productId);
+        if (list) {
+          list.push(image);
+        } else {
+          imagesByProductId.set(image.productId, [image]);
+        }
+      });
+
+      return rows.map((row) => {
+        const productImagesForRow = imagesByProductId.get(row.id) ?? [];
+        const [primary, secondary] = productImagesForRow;
+
+        return {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          basePriceCents: row.basePriceCents,
+          compareAtPriceCents: row.compareAtPriceCents,
+          currency: row.currency,
+          category: row.categoryName
+            ? { name: row.categoryName, slug: row.categorySlug }
+            : null,
+          primaryImage: primary
+            ? { url: primary.url, altText: primary.altText }
+            : null,
+          hoverImage:
+            secondary && secondary.url !== primary?.url
+              ? { url: secondary.url, altText: secondary.altText }
+              : null,
+        };
+      });
     }),
 
   create: adminProcedure

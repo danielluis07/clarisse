@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Search, User, ShoppingBag, Menu } from "lucide-react";
+import { Search, User, Menu } from "lucide-react";
 import { AnnouncementBar } from "@/components/store/announcement-bar";
+import { CartSheet } from "@/components/store/cart/cart-sheet";
 
 const primaryNav = [
   { label: "Novidades", href: "/novidades" },
@@ -50,20 +51,12 @@ export const Header = () => {
               <Search className="size-5" />
             </button>
             <Link
-              href="/conta"
+              href="/login"
               aria-label="Conta"
               className="hidden text-foreground/80 transition-colors hover:text-foreground md:inline-flex">
               <User className="size-5" />
             </Link>
-            <Link
-              href="/sacola"
-              aria-label="Sacola (0 itens)"
-              className="relative text-foreground/80 transition-colors hover:text-foreground">
-              <ShoppingBag className="size-5" />
-              <span className="absolute -right-2.5 -top-1 text-[10px] tabular-nums text-foreground/60">
-                0
-              </span>
-            </Link>
+            <CartSheet />
           </div>
         </div>
 
