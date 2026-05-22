@@ -443,7 +443,9 @@ export const productsRouter = createTRPCRouter({
         })
         .from(products)
         .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(and(eq(products.slug, input.slug), eq(products.status, "active")))
+        .where(
+          and(eq(products.slug, input.slug), eq(products.status, "active")),
+        )
         .limit(1);
 
       if (!row) {
@@ -568,8 +570,7 @@ export const productsRouter = createTRPCRouter({
           ([colorKey, color]) => ({
             ...color,
             images: imageItems.filter(
-              (image) =>
-                image.colorName?.trim().toLowerCase() === colorKey,
+              (image) => image.colorName?.trim().toLowerCase() === colorKey,
             ),
           }),
         ),
@@ -590,7 +591,9 @@ export const productsRouter = createTRPCRouter({
       const [current] = await db
         .select({ id: products.id, categoryId: products.categoryId })
         .from(products)
-        .where(eq(products.slug, input.slug))
+        .where(
+          and(eq(products.slug, input.slug), eq(products.status, "active")),
+        )
         .limit(1);
 
       if (!current) return [];

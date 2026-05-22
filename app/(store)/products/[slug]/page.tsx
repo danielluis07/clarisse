@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { ProductHeader } from "@/components/store/product/product-header";
-import { ProductExperience } from "@/components/store/product/product-experience";
+import { ProductPageView } from "@/components/store/product/product-page-view";
 import { StoreRelatedProducts } from "@/components/store/product/store-related-products";
 import {
   prefetchStoreProduct,
@@ -22,12 +21,8 @@ const ProductDetailsPage = async ({
   return (
     <HydrateClient>
       <ErrorBoundary fallback={<ProductErrorState />}>
-        <Suspense fallback={<ProductHeaderSkeleton />}>
-          <ProductHeader slug={slug} />
-        </Suspense>
-
         <Suspense fallback={<ProductExperienceSkeleton />}>
-          <ProductExperience slug={slug} />
+          <ProductPageView slug={slug} />
         </Suspense>
 
         <ErrorBoundary fallback={null}>
@@ -47,14 +42,6 @@ const ProductDetailsPage = async ({
     </HydrateClient>
   );
 };
-
-const ProductHeaderSkeleton = () => (
-  <div className="border-b border-foreground/10 bg-background">
-    <div className="mx-auto max-w-screen-2xl px-6 py-4 md:px-10">
-      <div className="h-3 w-72 animate-pulse bg-foreground/10" />
-    </div>
-  </div>
-);
 
 const ProductExperienceSkeleton = () => (
   <section className="mx-auto grid max-w-screen-2xl grid-cols-1 gap-12 px-6 py-10 md:px-10 md:py-14 lg:grid-cols-12 lg:gap-16 lg:py-16">

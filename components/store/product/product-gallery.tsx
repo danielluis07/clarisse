@@ -15,6 +15,14 @@ export const ProductGallery = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
 
+  if (images.length === 0) {
+    return (
+      <div className="flex aspect-3/4 w-full items-center justify-center bg-foreground/3 text-sm text-foreground/55">
+        Imagem indisponível
+      </div>
+    );
+  }
+
   useEffect(() => {
     if (!zoomOpen) return;
     const onKey = (e: KeyboardEvent) => {

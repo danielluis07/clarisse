@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/hooks/cart";
 import { useURLFilters } from "@/hooks/use-url-filters";
+import type { StoreProductOutput } from "@/modules/products/types";
 import { ProductGallery } from "./product-gallery";
-import { useStoreProductSuspense } from "@/modules/products/hooks";
 import {
   buildStoreProductView,
   buildVariantPriceLabel,
@@ -17,8 +17,11 @@ import {
   getSizeOptionsForColor,
 } from "@/modules/products/store-utils";
 
-export const ProductExperience = ({ slug }: { slug: string }) => {
-  const { data: product } = useStoreProductSuspense({ slug });
+export const ProductExperience = ({
+  product,
+}: {
+  product: StoreProductOutput;
+}) => {
   const view = useMemo(() => buildStoreProductView(product), [product]);
 
   const searchParams = useSearchParams();
@@ -28,7 +31,21 @@ export const ProductExperience = ({ slug }: { slug: string }) => {
   const sizeParam = searchParams.get("size");
 
   const selectedColor =
-    view.colors.find((color) => color.slug === colorParam) ?? view.colors[0];
+    view.colors.find((color) => color.slug === colorParam) ??
+    view.colors[0] ??
+    null;
+
+  if (!selectedColor) {
+    return (
+      <section className="bg-background">
+        <div className="mx-auto max-w-screen-2xl px-6 py-10 md:px-10 md:py-14">
+          <p className="text-sm text-foreground/60">
+            Produto indisponível no momento.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   const sizeOptions = useMemo(
     () => getSizeOptionsForColor(product, selectedColor.name),
@@ -80,8 +97,7 @@ export const ProductExperience = ({ slug }: { slug: string }) => {
       view.allImageUrls[0] ??
       product.primaryImage?.mediaAsset.url ??
       null;
-    const unitPriceCents =
-      selectedVariant.priceCents ?? product.basePriceCents;
+    const unitPriceCents = selectedVariant.priceCents ?? product.basePriceCents;
     const compareAtPriceCents =
       selectedVariant.compareAtPriceCents ?? product.compareAtPriceCents;
 
@@ -263,9 +279,7 @@ export const ProductExperience = ({ slug }: { slug: string }) => {
                   type="button"
                   aria-label="Diminuir quantidade"
                   className="flex size-12 items-center justify-center text-foreground/70 transition-colors hover:text-foreground disabled:opacity-30"
-                  onClick={() =>
-                    setQuantity(Math.max(1, selectedQuantity - 1))
-                  }
+                  onClick={() => setQuantity(Math.max(1, selectedQuantity - 1))}
                   disabled={selectedQuantity <= 1}>
                   <Minus className="size-3.5" />
                 </button>
@@ -288,7 +302,7 @@ export const ProductExperience = ({ slug }: { slug: string }) => {
                 type="button"
                 onClick={handleAddToBag}
                 disabled={selectedVariantOutOfStock}
-                className="group order-3 inline-flex h-12 w-full items-center justify-center gap-3 bg-foreground px-5 text-[11px] uppercase tracking-[0.2em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 sm:order-none sm:flex-1 sm:tracking-[0.25em]">
+                className="group order-3 inline-flex h-12 w-full items-center justify-center gap-3 bg-foreground px-5 text-[11px] uppercase tracking-[0.2em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 sm:order-0 sm:flex-1 sm:tracking-[0.25em]">
                 <ShoppingBag className="size-4" />
                 {selectedVariantOutOfStock
                   ? "Indisponível"

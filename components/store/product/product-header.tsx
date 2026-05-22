@@ -1,12 +1,10 @@
 "use client";
 
-import { ProductBreadcrumb } from "./product-breadcrumb";
-import { ProductEditorial } from "./product-editorial";
-import { useStoreProductSuspense } from "@/modules/products/hooks";
+import type { StoreProductOutput } from "@/modules/products/types";
+import { ProductBreadcrumb } from "@/components/store/product/product-breadcrumb";
+import { ProductEditorial } from "@/components/store/product/product-editorial";
 
-export const ProductHeader = ({ slug }: { slug: string }) => {
-  const { data: product } = useStoreProductSuspense({ slug });
-
+export const ProductHeader = ({ product }: { product: StoreProductOutput }) => {
   const categoryHref = product.category?.slug
     ? `/categorias/${product.category.slug}`
     : null;
@@ -29,9 +27,11 @@ export const ProductHeader = ({ slug }: { slug: string }) => {
   );
 };
 
-export const ProductEditorialBlock = ({ slug }: { slug: string }) => {
-  const { data: product } = useStoreProductSuspense({ slug });
-
+export const ProductEditorialBlock = ({
+  product,
+}: {
+  product: StoreProductOutput;
+}) => {
   const editorialImage =
     product.colorImageSets?.[0]?.images?.[1]?.mediaAsset.url ??
     product.colorImageSets?.[0]?.images?.[0]?.mediaAsset.url ??
