@@ -9,7 +9,10 @@ import type {
   CommittedMediaItem,
   MediaAsset,
   MediaSelectionItem,
+  RegisterAssetInput,
 } from "@/modules/media/types";
+
+type UploadMetadata = RegisterAssetInput["metadata"];
 
 export const useUploadMedia = () => {
   const trpc = useTRPC();
@@ -22,11 +25,13 @@ export const useUploadMedia = () => {
     file,
     folder,
     altText,
+    metadata,
     onProgress,
   }: {
     file: File;
     folder: string;
     altText?: string | null;
+    metadata?: UploadMetadata;
     onProgress?: (progress: number) => void;
   }): Promise<MediaAsset> => {
     onProgress?.(2);
@@ -65,6 +70,7 @@ export const useUploadMedia = () => {
       width: dimensions.width || null,
       height: dimensions.height || null,
       altText: altText ?? null,
+      metadata,
     });
 
     onProgress?.(100);
@@ -78,6 +84,11 @@ export const useUploadMedia = () => {
 export const useDeleteMedia = () => {
   const trpc = useTRPC();
   return useMutation(trpc.media.deleteAsset.mutationOptions());
+};
+
+export const useCleanupExpiredTemporaryMedia = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.media.cleanupExpiredTemporaryAssets.mutationOptions());
 };
 
 /**
@@ -101,10 +112,12 @@ export const useCommitMedia = () => {
   const commit = async ({
     items,
     folder,
+    metadata,
     onItemProgress,
   }: {
     items: MediaSelectionItem[];
     folder: string;
+    metadata?: UploadMetadata;
     onItemProgress?: (localId: string, progress: number) => void;
   }): Promise<CommittedMediaItem[]> => {
     const results: CommittedMediaItem[] = [];
@@ -125,6 +138,7 @@ export const useCommitMedia = () => {
         file: item.file,
         folder,
         altText: item.altText,
+        metadata,
         onProgress: (progress) => onItemProgress?.(item.localId, progress),
       });
 

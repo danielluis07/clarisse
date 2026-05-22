@@ -216,7 +216,8 @@ Rules:
 - Infer variants from visible colors and product type. Clothing usually uses PP, P, M, G unless the item visibly needs a different grade. Bags and simple accessories should use One Size.
 - Keep stockQuantity at 0 unless the image clearly includes inventory information. Use lowStockThreshold 5 by default.
 - Use weightGrams only when the product type has a reasonable broad estimate; otherwise return null.
-- For imageSuggestions, return one entry per provided imageIndex with useful alt text, color when identifiable, and exactly one primary image.
+- For imageSuggestions, return exactly one entry for every provided imageIndex, including the final image, with useful alt text, color when identifiable, and exactly one primary image.
+- imageSuggestions.colorName must exactly match one of the returned variant colorName values, or be null when no visible color can be identified.
 
 Active categories:
 ${JSON.stringify(catalogOptions.categories)}
@@ -242,6 +243,7 @@ export const sanitizeAnalysis = (
     output.imageSuggestions,
     descriptors,
     name,
+    variants,
   );
 
   return {
@@ -335,19 +337,58 @@ const sanitizeImageSuggestions = (
   suggestions: ProductImageAnalysis["imageSuggestions"],
   descriptors: ImageDescriptor[],
   productName: string,
+  variants: ProductImageAnalysis["variants"],
 ) => {
   const byIndex = new Map<
     number,
     ProductImageAnalysis["imageSuggestions"][number]
   >();
+  const colorsByName = new Map<
+    string,
+    { colorName: string; colorHex: string | null }
+  >();
+  const colorsByHex = new Map<
+    string,
+    { colorName: string; colorHex: string | null }
+  >();
+
+  variants.forEach((variant) => {
+    const colorName = truncate(variant.colorName, 80) || "Default";
+    const colorHex = normalizeColorHex(variant.colorHex);
+    const color = { colorName, colorHex };
+    const nameKey = colorName.toLowerCase();
+
+    if (!colorsByName.has(nameKey)) {
+      colorsByName.set(nameKey, color);
+    }
+
+    if (colorHex && !colorsByHex.has(colorHex)) {
+      colorsByHex.set(colorHex, color);
+    }
+  });
+
+  const resolveColor = (
+    suggestion: ProductImageAnalysis["imageSuggestions"][number],
+  ) => {
+    const colorName = suggestion.colorName
+      ? truncate(suggestion.colorName, 80)
+      : null;
+    const colorHex = normalizeColorHex(suggestion.colorHex);
+    const byName = colorName
+      ? colorsByName.get(colorName.toLowerCase())
+      : undefined;
+    const byHex = colorHex ? colorsByHex.get(colorHex) : undefined;
+
+    return byName ?? byHex ?? null;
+  };
 
   suggestions.forEach((suggestion) => {
+    const color = resolveColor(suggestion);
+
     byIndex.set(suggestion.imageIndex, {
       imageIndex: suggestion.imageIndex,
-      colorName: suggestion.colorName
-        ? truncate(suggestion.colorName, 80)
-        : null,
-      colorHex: normalizeColorHex(suggestion.colorHex),
+      colorName: color?.colorName ?? null,
+      colorHex: color?.colorHex ?? null,
       altText: truncate(suggestion.altText, 255) || productName,
       isPrimary: suggestion.isPrimary,
     });

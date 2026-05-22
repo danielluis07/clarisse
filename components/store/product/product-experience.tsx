@@ -29,27 +29,14 @@ export const ProductExperience = ({
 
   const colorParam = searchParams.get("color");
   const sizeParam = searchParams.get("size");
-
   const selectedColor =
     view.colors.find((color) => color.slug === colorParam) ??
     view.colors[0] ??
     null;
 
-  if (!selectedColor) {
-    return (
-      <section className="bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-10 md:px-10 md:py-14">
-          <p className="text-sm text-foreground/60">
-            Produto indisponível no momento.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   const sizeOptions = useMemo(
-    () => getSizeOptionsForColor(product, selectedColor.name),
-    [product, selectedColor.name],
+    () => getSizeOptionsForColor(product, selectedColor?.name ?? ""),
+    [product, selectedColor?.name],
   );
 
   const selectedSize =
@@ -59,7 +46,7 @@ export const ProductExperience = ({
 
   const selectedVariant = findVariant(
     product,
-    selectedColor.name,
+    selectedColor?.name ?? null,
     selectedSize?.label ?? null,
   );
 
@@ -93,7 +80,7 @@ export const ProductExperience = ({
     }
 
     const imageUrl =
-      selectedColor.imageUrls[0] ??
+      selectedColor?.imageUrls[0] ??
       view.allImageUrls[0] ??
       product.primaryImage?.mediaAsset.url ??
       null;
@@ -125,6 +112,18 @@ export const ProductExperience = ({
       description: `${product.name} · ${selectedVariant.colorName} · ${selectedVariant.size} · ${selectedQuantity}x`,
     });
   };
+
+  if (!selectedColor) {
+    return (
+      <section className="bg-background">
+        <div className="mx-auto max-w-screen-2xl px-6 py-10 md:px-10 md:py-14">
+          <p className="text-sm text-foreground/60">
+            Produto indisponível no momento.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-background">

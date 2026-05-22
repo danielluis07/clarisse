@@ -1,10 +1,19 @@
 import { TRPCError } from "@trpc/server";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { mediaAssets } from "@/db/schema";
-import { deleteMediaAssetsByIds, parseS3KeyFromUrl } from "@/lib/media-server";
+import {
+  deleteMediaAssetRows,
+  deleteMediaAssetsByIds,
+  parseS3KeyFromUrl,
+  purgeMediaAssetsFromS3,
+} from "@/lib/media-server";
 import { client } from "@/lib/s3";
+import {
+  TEMPORARY_MEDIA_TTL_MS,
+  TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE,
+} from "@/modules/media/constants";
 import {
   createPresignedUploadInput,
   deleteAssetInput,
@@ -12,6 +21,7 @@ import {
   getAssetsByIdsInput,
   registerAssetInput,
 } from "@/modules/media/validations";
+import { getUnusedMediaAssetIds } from "@/modules/products/operations";
 import { adminProcedure, createTRPCRouter } from "@/trpc/init";
 
 const sanitizeFilename = (filename: string) =>
@@ -99,6 +109,7 @@ export const mediaRouter = createTRPCRouter({
           width: input.width ?? null,
           height: input.height ?? null,
           altText: input.altText ?? null,
+          metadata: input.metadata ?? null,
           createdById: ctx.adminId,
         })
         .returning();
@@ -112,6 +123,42 @@ export const mediaRouter = createTRPCRouter({
 
       return asset;
     }),
+
+  cleanupExpiredTemporaryAssets: adminProcedure.mutation(async () => {
+    try {
+      const expiresBefore = new Date(Date.now() - TEMPORARY_MEDIA_TTL_MS);
+      const deletedMediaRows = await db.transaction(async (tx) => {
+        const candidates = await tx
+          .select({ id: mediaAssets.id })
+          .from(mediaAssets)
+          .where(
+            and(
+              sql`${mediaAssets.metadata}->>'temporary' = 'true'`,
+              sql`${mediaAssets.metadata}->>'purpose' = ${TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE}`,
+              lt(mediaAssets.createdAt, expiresBefore),
+            ),
+          )
+          .limit(100);
+
+        const unusedMediaIds = await getUnusedMediaAssetIds(
+          tx,
+          candidates.map((candidate) => candidate.id),
+        );
+
+        return deleteMediaAssetRows(tx, unusedMediaIds);
+      });
+
+      await purgeMediaAssetsFromS3(deletedMediaRows);
+
+      return { deletedCount: deletedMediaRows.length };
+    } catch (error) {
+      console.error("Erro ao limpar assets temporários:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Não foi possível limpar assets temporários expirados",
+      });
+    }
+  }),
 
   deleteAsset: adminProcedure
     .input(deleteAssetInput)

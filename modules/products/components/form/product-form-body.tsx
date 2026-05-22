@@ -4,7 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Check, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ChangeEvent, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -39,7 +45,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { centsToReais, compressImageToWebP } from "@/lib/utils";
+import { centsToReais } from "@/lib/utils";
+import {
+  TEMPORARY_MEDIA_TTL_MS,
+  TEMPORARY_PRODUCT_IMAGE_ANALYSIS_FOLDER,
+  TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE,
+} from "@/modules/media/constants";
+import {
+  useCleanupExpiredTemporaryMedia,
+  useCommitMedia,
+  useDeleteMedia,
+} from "@/modules/media/hooks";
+import type { CommittedMediaItem } from "@/modules/media/types";
 import { analyzeProductImagesAction } from "@/modules/products/ai-actions";
 import {
   productFormSchema,
@@ -64,7 +81,6 @@ import {
   useUpdateProduct,
 } from "@/modules/products/hooks";
 import type { ProductOutput } from "@/modules/products/types";
-import { useCommitMedia, useDeleteMedia } from "@/modules/media/hooks";
 import { useConfirm } from "@/providers/confirm-provider";
 import { ProductFormVariantRow } from "@/modules/products/components/form/product-form-variant-row";
 import { ProductFormGrid } from "@/modules/products/components/form/product-form-grid";
@@ -114,6 +130,32 @@ const getImageSelectionKey = (slot: ProductImageSlot) =>
         slot.selection.file.lastModified,
       ].join(":");
 
+const getImageSlotsSignature = (slots: ProductImageSlot[]) =>
+  slots.map(getImageSelectionKey).sort().join("|");
+
+const applyCommittedMediaToSlot = (
+  slot: ProductImageSlot,
+  committed: Pick<
+    CommittedMediaItem,
+    "assetId" | "url" | "filename" | "altText"
+  >,
+): ProductImageSlot => ({
+  selection: {
+    kind: "existing",
+    localId: committed.assetId,
+    assetId: committed.assetId,
+    url: committed.url,
+    filename: committed.filename,
+    altText: slot.draft.altText ?? committed.altText,
+  },
+  draft: {
+    ...slot.draft,
+    localId: committed.assetId,
+    assetId: committed.assetId,
+    altText: slot.draft.altText ?? committed.altText,
+  },
+});
+
 export const ProductFormBody = ({
   mode,
   product,
@@ -127,12 +169,15 @@ export const ProductFormBody = ({
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const deleteMedia = useDeleteMedia();
+  const cleanupExpiredTemporaryMedia = useCleanupExpiredTemporaryMedia();
   const { commit } = useCommitMedia();
   const { confirm, closeConfirm, setPending } = useConfirm();
   const defaultValues = useMemo(
     () => getProductFormDefaultValues(product),
     [product],
   );
+  const temporaryAssetIds = useMemo(() => new Set<string>(), []);
+  const [analysisSessionId] = useState(() => crypto.randomUUID());
   const [imageSlots, setImageSlots] = useState<ProductImageSlot[]>(() =>
     productImagesToSlots(product),
   );
@@ -149,6 +194,12 @@ export const ProductFormBody = ({
     () =>
       getVariantSharedDefaults(defaultValues.variants[0] ?? defaultVariant()),
   );
+  const isSaving =
+    isCommitting ||
+    createProduct.isPending ||
+    updateProduct.isPending ||
+    deleteProduct.isPending;
+  const isSubmitting = isSaving || isAnalyzing;
 
   const {
     control,
@@ -175,23 +226,54 @@ export const ProductFormBody = ({
     [watchedVariants],
   );
   const imageSelectionSignature = useMemo(
-    () => imageSlots.map(getImageSelectionKey).sort().join("|"),
+    () => getImageSlotsSignature(imageSlots),
     [imageSlots],
   );
   const hasAnalyzedCurrentImages =
     imageSelectionSignature !== "" &&
     analyzedImageSignature === imageSelectionSignature;
 
-  const isSaving =
-    isCommitting ||
-    createProduct.isPending ||
-    updateProduct.isPending ||
-    deleteProduct.isPending;
-  const isSubmitting = isSaving || isAnalyzing;
-
   const title = mode === "create" ? "Novo produto" : "Editar produto";
   const submitLabel = mode === "create" ? "Criar produto" : "Salvar produto";
   const backHref = "/admin/products";
+
+  const trackTemporaryAssetIds = useCallback((assetIds: string[]) => {
+    assetIds.forEach((assetId) => temporaryAssetIds.add(assetId));
+  }, [temporaryAssetIds]);
+
+  const releaseTemporaryAssetIds = useCallback((assetIds: string[]) => {
+    assetIds.forEach((assetId) => temporaryAssetIds.delete(assetId));
+  }, [temporaryAssetIds]);
+
+  const cleanupTemporaryAssetIds = useCallback((assetIds: string[]) => {
+    const uniqueAssetIds = Array.from(new Set(assetIds)).filter((assetId) =>
+      temporaryAssetIds.has(assetId),
+    );
+
+    if (!uniqueAssetIds.length) return;
+
+    releaseTemporaryAssetIds(uniqueAssetIds);
+    void Promise.allSettled(
+      uniqueAssetIds.map((assetId) =>
+        deleteMedia.mutateAsync({ id: assetId }),
+      ),
+    );
+  }, [deleteMedia, releaseTemporaryAssetIds, temporaryAssetIds]);
+
+  useEffect(() => {
+    cleanupExpiredTemporaryMedia.mutate(undefined, {
+      onError: (error) => {
+        console.error("Erro ao limpar assets temporários expirados:", error);
+      },
+    });
+
+    return () => {
+      cleanupTemporaryAssetIds(Array.from(temporaryAssetIds));
+    };
+    // Run once for this form instance. `temporaryAssetIds` is a stable mutable
+    // registry used only for best-effort cleanup, not for rendering.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resolveImages = async () => {
     const committed = await commit({
@@ -239,22 +321,7 @@ export const ProductFormBody = ({
         const committed = committedByLocalId.get(slot.selection.localId);
         if (!committed) return slot;
 
-        return {
-          selection: {
-            kind: "existing",
-            localId: committed.assetId,
-            assetId: committed.assetId,
-            url: committed.url,
-            filename: committed.filename,
-            altText: slot.draft.altText ?? committed.altText,
-          },
-          draft: {
-            ...slot.draft,
-            localId: committed.assetId,
-            assetId: committed.assetId,
-            altText: slot.draft.altText ?? committed.altText,
-          },
-        };
+        return applyCommittedMediaToSlot(slot, committed);
       }),
     );
   };
@@ -273,6 +340,7 @@ export const ProductFormBody = ({
     try {
       const { images, committedByLocalId } = await resolveImages();
       const payload = buildProductPayload(values, images);
+      const persistedMediaAssetIds = images.map((image) => image.mediaAssetId);
 
       if (mode === "create") {
         const { variants, ...productPayload } = payload;
@@ -292,6 +360,7 @@ export const ProductFormBody = ({
             displayOrder: variant.displayOrder,
           })),
         });
+        releaseTemporaryAssetIds(persistedMediaAssetIds);
         toast.success("Produto criado com sucesso.");
         router.push(`/admin/products`);
         router.refresh();
@@ -304,6 +373,7 @@ export const ProductFormBody = ({
         id: product.id,
         ...payload,
       });
+      releaseTemporaryAssetIds(persistedMediaAssetIds);
 
       if (orphanedAssetIds.length) {
         await Promise.allSettled(
@@ -325,6 +395,11 @@ export const ProductFormBody = ({
   });
 
   const handleAssetRemoved = (assetId: string) => {
+    if (temporaryAssetIds.has(assetId)) {
+      cleanupTemporaryAssetIds([assetId]);
+      return;
+    }
+
     setOrphanedAssetIds((current) =>
       current.includes(assetId) ? current : [...current, assetId],
     );
@@ -353,39 +428,82 @@ export const ProductFormBody = ({
     }
   };
 
-  const buildAnalysisFormData = async () => {
+  const resolveAnalysisSlots = async () => {
     const slots = imageSlots.slice(0, MAX_ANALYSIS_IMAGES);
+    const pendingLocalIds = new Set(
+      slots
+        .filter((slot) => slot.selection.kind === "pending")
+        .map((slot) => slot.selection.localId),
+    );
+
+    if (!pendingLocalIds.size) return slots;
+
+    const committed = await commit({
+      items: slots.map((slot) => slot.selection),
+      folder: TEMPORARY_PRODUCT_IMAGE_ANALYSIS_FOLDER,
+      metadata: {
+        temporary: true,
+        purpose: TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE,
+        sessionId: analysisSessionId,
+        expiresAt: new Date(Date.now() + TEMPORARY_MEDIA_TTL_MS).toISOString(),
+      },
+    });
+    const committedByLocalId = new Map(
+      committed.map((item) => [item.localId, item]),
+    );
+    const temporaryAssetIds = committed
+      .filter((item) => pendingLocalIds.has(item.localId))
+      .map((item) => item.assetId);
+
+    trackTemporaryAssetIds(temporaryAssetIds);
+
+    const resolvedSlots = slots.map((slot) => {
+      const committedItem = committedByLocalId.get(slot.selection.localId);
+      if (!committedItem || !pendingLocalIds.has(slot.selection.localId)) {
+        return slot;
+      }
+
+      return applyCommittedMediaToSlot(slot, committedItem);
+    });
+
+    setImageSlots((current) =>
+      current.map((slot) => {
+        const committedItem = committedByLocalId.get(slot.selection.localId);
+        if (!committedItem || !pendingLocalIds.has(slot.selection.localId)) {
+          return slot;
+        }
+
+        return applyCommittedMediaToSlot(slot, committedItem);
+      }),
+    );
+
+    return resolvedSlots;
+  };
+
+  const buildAnalysisFormData = (slots: ProductImageSlot[]) => {
     const formData = new FormData();
     const descriptors: Array<{
-      kind: "file" | "url";
+      kind: "url";
       imageIndex: number;
       filename: string | null;
       altText: string | null;
-      url?: string;
+      url: string;
     }> = [];
 
     for (const [imageIndex, slot] of slots.entries()) {
       const altText = slot.draft.altText ?? slot.selection.altText ?? null;
 
-      if (slot.selection.kind === "existing") {
-        descriptors.push({
-          kind: "url",
-          imageIndex,
-          url: slot.selection.url,
-          filename: slot.selection.filename,
-          altText,
-        });
-        continue;
+      if (slot.selection.kind !== "existing") {
+        throw new Error("Não foi possível preparar as imagens para análise.");
       }
 
-      const compressed = await compressImageToWebP(slot.selection.file);
       descriptors.push({
-        kind: "file",
+        kind: "url",
         imageIndex,
-        filename: compressed.name,
+        url: slot.selection.url,
+        filename: slot.selection.filename,
         altText,
       });
-      formData.append(`image-${imageIndex}`, compressed, compressed.name);
     }
 
     formData.append("images", JSON.stringify(descriptors));
@@ -482,6 +600,44 @@ export const ProductFormBody = ({
       }),
     );
 
+    const imageColorsByName = new Map<
+      string,
+      { colorName: string; colorHex: string | null }
+    >();
+    const imageColorsByHex = new Map<
+      string,
+      { colorName: string; colorHex: string | null }
+    >();
+
+    suggestion.variants.forEach((variant) => {
+      const color = {
+        colorName: variant.colorName,
+        colorHex: variant.colorHex,
+      };
+      const nameKey = variant.colorName.trim().toLowerCase();
+
+      if (!imageColorsByName.has(nameKey)) {
+        imageColorsByName.set(nameKey, color);
+      }
+
+      if (variant.colorHex && !imageColorsByHex.has(variant.colorHex)) {
+        imageColorsByHex.set(variant.colorHex, color);
+      }
+    });
+
+    const getImageSuggestionColor = (
+      imageSuggestion: ProductImageAnalysisSuggestion["imageSuggestions"][number],
+    ) => {
+      const byName = imageSuggestion.colorName
+        ? imageColorsByName.get(imageSuggestion.colorName.trim().toLowerCase())
+        : undefined;
+      const byHex = imageSuggestion.colorHex
+        ? imageColorsByHex.get(imageSuggestion.colorHex.toUpperCase())
+        : undefined;
+
+      return byName ?? byHex ?? null;
+    };
+
     const imageSuggestionsByIndex = new Map(
       suggestion.imageSuggestions.map((imageSuggestion) => [
         imageSuggestion.imageIndex,
@@ -507,6 +663,7 @@ export const ProductFormBody = ({
         }
 
         const altText = imageSuggestion.altText || slot.draft.altText;
+        const color = getImageSuggestionColor(imageSuggestion);
 
         return {
           selection: {
@@ -515,8 +672,8 @@ export const ProductFormBody = ({
           },
           draft: {
             ...slot.draft,
-            colorName: imageSuggestion.colorName,
-            colorHex: imageSuggestion.colorHex,
+            colorName: color?.colorName ?? null,
+            colorHex: color?.colorHex ?? null,
             altText,
             isPrimary: imageIndex === primaryImageIndex,
           },
@@ -538,10 +695,11 @@ export const ProductFormBody = ({
     }
 
     setIsAnalyzing(true);
-    const signatureAtStart = imageSelectionSignature;
 
     try {
-      const formData = await buildAnalysisFormData();
+      const analysisSlots = await resolveAnalysisSlots();
+      const signatureAtStart = getImageSlotsSignature(analysisSlots);
+      const formData = buildAnalysisFormData(analysisSlots);
       const suggestion = await analyzeProductImagesAction(formData);
       applyAnalysisSuggestion(suggestion);
       setAnalyzedImageSignature(signatureAtStart);
@@ -552,6 +710,37 @@ export const ProductFormBody = ({
       setIsAnalyzing(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      mode !== "create" ||
+      isSubmitting ||
+      !imageSlots.length ||
+      hasAnalyzedCurrentImages
+    ) {
+      return;
+    }
+
+    let canceled = false;
+    void Promise.resolve().then(() => {
+      if (!canceled) {
+        void handleAnalyzeImages();
+      }
+    });
+
+    return () => {
+      canceled = true;
+    };
+    // Re-run when the selected images change, including changes made while
+    // another analysis was already in flight.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    hasAnalyzedCurrentImages,
+    imageSelectionSignature,
+    imageSlots.length,
+    isSubmitting,
+    mode,
+  ]);
 
   const updateVariantDefault = <Key extends keyof VariantSharedDefaults>(
     key: Key,
@@ -676,23 +865,6 @@ export const ProductFormBody = ({
               onClick={handleDelete}>
               <Trash2 data-icon="inline-start" />
               Excluir
-            </Button>
-          )}
-          {mode === "create" && (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={
-                isSubmitting || !imageSlots.length || hasAnalyzedCurrentImages
-              }
-              onClick={handleAnalyzeImages}
-              className="w-44">
-              {isAnalyzing ? (
-                <Spinner data-icon="inline-start" />
-              ) : (
-                <Sparkles data-icon="inline-start" />
-              )}
-              {isAnalyzing ? "Analisando" : "Analisar imagens"}
             </Button>
           )}
           <Button type="submit" disabled={isSubmitting} className="w-40">

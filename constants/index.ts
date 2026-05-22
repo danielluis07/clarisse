@@ -8,7 +8,7 @@ export const MAX_FILE_SIZE_BYTES = {
   value: 3 * 1024 * 1024,
 } as const;
 
-export const MAX_ANALYSIS_IMAGES = 8;
+export const MAX_ANALYSIS_IMAGES = 12;
 
 export const BRAZILIAN_STATES = [
   "AC",

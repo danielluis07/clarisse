@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { MAX_FILE_SIZE_BYTES } from "@/constants";
+import { TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE } from "@/modules/media/constants";
 
 export const ALLOWED_IMAGE_MIME_TYPES = [
   "image/jpeg",
@@ -43,6 +44,15 @@ export const registerAssetInput = z.object({
   width: z.number().int().min(0).nullable().optional(),
   height: z.number().int().min(0).nullable().optional(),
   altText: z.string().trim().max(255).nullable().optional(),
+  metadata: z
+    .object({
+      temporary: z.literal(true),
+      purpose: z.literal(TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE),
+      sessionId: z.string().trim().min(1).max(120),
+      expiresAt: z.string().trim().min(1).max(80),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const deleteAssetInput = z.object({
