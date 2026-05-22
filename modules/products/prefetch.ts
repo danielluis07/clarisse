@@ -21,6 +21,15 @@ export const prefetchStoreProduct = async (slug: string) => {
   return prefetch(trpc.products.getStoreProduct.queryOptions({ slug }));
 };
 
+export const prefetchStoreRelatedProducts = async (
+  slug: string,
+  limit = 4,
+) => {
+  return prefetch(
+    trpc.products.getStoreRelatedProducts.queryOptions({ slug, limit }),
+  );
+};
+
 export const prefetchProductFormOptions = async () => {
   return prefetch(trpc.products.formOptions.queryOptions());
 };

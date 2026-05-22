@@ -433,6 +433,11 @@ export const getStoreProductInput = z.object({
   slug: z.string().trim().min(1, "Slug do produto é obrigatório"),
 });
 
+export const getStoreRelatedProductsInput = z.object({
+  slug: z.string().trim().min(1, "Slug do produto é obrigatório"),
+  limit: z.number().int().min(1).max(12).default(4),
+});
+
 export const deleteProductInput = z.object({
   id: z.string().min(1, "ID do produto é obrigatório"),
 });
