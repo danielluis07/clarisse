@@ -25,6 +25,13 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Field,
   FieldContent,
   FieldDescription,
@@ -194,6 +201,10 @@ export const ProductFormBody = ({
     () =>
       getVariantSharedDefaults(defaultValues.variants[0] ?? defaultVariant()),
   );
+  const [customVariantDefaultPrices, setCustomVariantDefaultPrices] = useState({
+    price: false,
+    compareAtPrice: false,
+  });
   const isSaving =
     isCommitting ||
     createProduct.isPending ||
@@ -221,6 +232,14 @@ export const ProductFormBody = ({
     control,
     name: "variants",
   });
+  const watchedBasePrice = useWatch({
+    control,
+    name: "basePrice",
+  });
+  const watchedCompareAtPrice = useWatch({
+    control,
+    name: "compareAtPrice",
+  });
   const imageColorOptions = useMemo(
     () => getVariantColorOptions(watchedVariants),
     [watchedVariants],
@@ -232,33 +251,60 @@ export const ProductFormBody = ({
   const hasAnalyzedCurrentImages =
     imageSelectionSignature !== "" &&
     analyzedImageSignature === imageSelectionSignature;
+  const effectiveVariantDefaults = useMemo<VariantSharedDefaults>(
+    () => ({
+      ...variantDefaults,
+      price: customVariantDefaultPrices.price
+        ? variantDefaults.price
+        : (watchedBasePrice ?? ""),
+      compareAtPrice: customVariantDefaultPrices.compareAtPrice
+        ? variantDefaults.compareAtPrice
+        : (watchedCompareAtPrice ?? ""),
+    }),
+    [
+      customVariantDefaultPrices.compareAtPrice,
+      customVariantDefaultPrices.price,
+      variantDefaults,
+      watchedBasePrice,
+      watchedCompareAtPrice,
+    ],
+  );
 
   const title = mode === "create" ? "Novo produto" : "Editar produto";
   const submitLabel = mode === "create" ? "Criar produto" : "Salvar produto";
   const backHref = "/admin/products";
 
-  const trackTemporaryAssetIds = useCallback((assetIds: string[]) => {
-    assetIds.forEach((assetId) => temporaryAssetIds.add(assetId));
-  }, [temporaryAssetIds]);
+  const trackTemporaryAssetIds = useCallback(
+    (assetIds: string[]) => {
+      assetIds.forEach((assetId) => temporaryAssetIds.add(assetId));
+    },
+    [temporaryAssetIds],
+  );
 
-  const releaseTemporaryAssetIds = useCallback((assetIds: string[]) => {
-    assetIds.forEach((assetId) => temporaryAssetIds.delete(assetId));
-  }, [temporaryAssetIds]);
+  const releaseTemporaryAssetIds = useCallback(
+    (assetIds: string[]) => {
+      assetIds.forEach((assetId) => temporaryAssetIds.delete(assetId));
+    },
+    [temporaryAssetIds],
+  );
 
-  const cleanupTemporaryAssetIds = useCallback((assetIds: string[]) => {
-    const uniqueAssetIds = Array.from(new Set(assetIds)).filter((assetId) =>
-      temporaryAssetIds.has(assetId),
-    );
+  const cleanupTemporaryAssetIds = useCallback(
+    (assetIds: string[]) => {
+      const uniqueAssetIds = Array.from(new Set(assetIds)).filter((assetId) =>
+        temporaryAssetIds.has(assetId),
+      );
 
-    if (!uniqueAssetIds.length) return;
+      if (!uniqueAssetIds.length) return;
 
-    releaseTemporaryAssetIds(uniqueAssetIds);
-    void Promise.allSettled(
-      uniqueAssetIds.map((assetId) =>
-        deleteMedia.mutateAsync({ id: assetId }),
-      ),
-    );
-  }, [deleteMedia, releaseTemporaryAssetIds, temporaryAssetIds]);
+      releaseTemporaryAssetIds(uniqueAssetIds);
+      void Promise.allSettled(
+        uniqueAssetIds.map((assetId) =>
+          deleteMedia.mutateAsync({ id: assetId }),
+        ),
+      );
+    },
+    [deleteMedia, releaseTemporaryAssetIds, temporaryAssetIds],
+  );
 
   useEffect(() => {
     cleanupExpiredTemporaryMedia.mutate(undefined, {
@@ -756,6 +802,10 @@ export const ProductFormBody = ({
     (key: "price" | "compareAtPrice") =>
     (event: ChangeEvent<HTMLInputElement>) => {
       const rawValue = event.target.value.replace(/\D/g, "");
+      setCustomVariantDefaultPrices((current) => ({
+        ...current,
+        [key]: true,
+      }));
       updateVariantDefault(key, rawValue ? Number.parseInt(rawValue, 10) : "");
     };
 
@@ -763,7 +813,7 @@ export const ProductFormBody = ({
     overrides: Partial<VariantFormInput> = {},
   ): VariantFormInput => ({
     ...defaultVariant(),
-    ...variantDefaults,
+    ...effectiveVariantDefaults,
     ...overrides,
   });
 
@@ -778,7 +828,7 @@ export const ProductFormBody = ({
     replace(
       current.map((variant) => ({
         ...variant,
-        ...variantDefaults,
+        ...effectiveVariantDefaults,
       })),
     );
     toast.success("Valores padrão aplicados à grade.");
@@ -837,298 +887,333 @@ export const ProductFormBody = ({
   };
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-6">
-      <header className="sticky top-0 z-30 flex flex-col gap-4 border-b bg-background/95 pb-5 pt-4 backdrop-blur supports-backdrop-filter:bg-background/80 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex flex-col gap-1.5">
-          <Button asChild variant="ghost" size="sm" className="w-fit px-0">
-            <Link href={backHref}>
-              <ArrowLeft data-icon="inline-start" />
-              Produtos
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            {title}
-          </h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            {mode === "create"
-              ? "Cadastre uma peça com imagens, variações, estoque e dados editoriais."
-              : "Atualize merchandising, variações e estoque desta peça."}
-          </p>
-        </div>
+    <>
+      <Dialog open={isAnalyzing}>
+        <DialogContent
+          showCloseButton={false}
+          className="sm:max-w-md"
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onInteractOutside={(event) => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="font-admin">Analisando imagens</DialogTitle>
+            <DialogDescription>
+              As imagens estão sendo analisadas com a ajuda da IA. Você pode
+              desabilitar essa funcionalidade nas configurações.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
+            <Spinner className="shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              Mantendo o formulário bloqueado enquanto a análise termina.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          {product && (
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={isSubmitting}
-              onClick={handleDelete}>
-              <Trash2 data-icon="inline-start" />
-              Excluir
+      <form onSubmit={submit} noValidate className="flex flex-col gap-6">
+        <header className="sticky top-0 z-30 flex flex-col gap-4 border-b bg-background/95 pb-5 pt-4 backdrop-blur supports-backdrop-filter:bg-background/80 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex flex-col gap-1.5">
+            <Button asChild variant="ghost" size="sm" className="w-fit px-0">
+              <Link href={backHref}>
+                <ArrowLeft data-icon="inline-start" />
+                Produtos
+              </Link>
             </Button>
-          )}
-          <Button type="submit" disabled={isSubmitting} className="w-40">
-            {isSaving ? (
-              <Spinner data-icon="inline-start" />
-            ) : (
-              <Save data-icon="inline-start" />
-            )}
-            {isSaving ? "Salvando" : submitLabel}
-          </Button>
-        </div>
-      </header>
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+              {title}
+            </h1>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              {mode === "create"
+                ? "Cadastre uma peça com imagens, variações, estoque e dados editoriais."
+                : "Atualize merchandising, variações e estoque desta peça."}
+            </p>
+          </div>
 
-      <ProductFormGrid
-        control={control}
-        errors={errors}
-        isSubmitting={isSubmitting}
-        imageSlots={imageSlots}
-        onImageSlotsChange={setImageSlots}
-        onAssetRemoved={handleAssetRemoved}
-        imageColorOptions={imageColorOptions}
-        options={options}
-        variantsSlot={
-          <Card>
-            <CardHeader className="border-b">
-              <CardTitle className="font-admin">Variações e estoque</CardTitle>
-              <CardDescription>
-                Cada linha representa uma unidade comprável no carrinho.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              <FieldSet>
-                <FieldLegend variant="label">Gerador de variações</FieldLegend>
-                <FieldDescription>
-                  Crie combinações iniciais de cores e tamanhos para a grade.
-                </FieldDescription>
-                <FieldGroup className="grid gap-4 lg:grid-cols-[1fr_1fr_180px]">
-                  <Field>
-                    <FieldLabel htmlFor="variant-colors">Cores</FieldLabel>
-                    <Textarea
-                      id="variant-colors"
-                      rows={3}
-                      value={colorDraft}
-                      onChange={(event) => setColorDraft(event.target.value)}
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="variant-sizes">Tamanhos</FieldLabel>
-                    <Textarea
-                      id="variant-sizes"
-                      rows={3}
-                      value={sizeDraft}
-                      onChange={(event) => setSizeDraft(event.target.value)}
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="variant-sku-prefix">
-                      Prefixo SKU
-                    </FieldLabel>
-                    <Input
-                      id="variant-sku-prefix"
-                      value={skuPrefix}
-                      onChange={(event) => setSkuPrefix(event.target.value)}
-                      placeholder="CLA-AURORA"
-                      disabled={isSubmitting}
-                    />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {product && (
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={isSubmitting}
+                onClick={handleDelete}>
+                <Trash2 data-icon="inline-start" />
+                Excluir
+              </Button>
+            )}
+            <Button type="submit" disabled={isSubmitting} className="w-40">
+              {isSaving ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Save data-icon="inline-start" />
+              )}
+              {isSaving ? "Salvando" : submitLabel}
+            </Button>
+          </div>
+        </header>
+
+        <ProductFormGrid
+          control={control}
+          errors={errors}
+          isSubmitting={isSubmitting}
+          imageSlots={imageSlots}
+          onImageSlotsChange={setImageSlots}
+          onAssetRemoved={handleAssetRemoved}
+          imageColorOptions={imageColorOptions}
+          options={options}
+          variantsSlot={
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle className="font-admin">
+                  Variações e estoque
+                </CardTitle>
+                <CardDescription>
+                  Cada linha representa uma unidade comprável no carrinho.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-5">
+                <FieldSet>
+                  <FieldLegend variant="label">
+                    Gerador de variações
+                  </FieldLegend>
+                  <FieldDescription>
+                    Crie combinações iniciais de cores e tamanhos para a grade.
+                  </FieldDescription>
+                  <FieldGroup className="grid gap-4 lg:grid-cols-[1fr_1fr_180px]">
+                    <Field>
+                      <FieldLabel htmlFor="variant-colors">Cores</FieldLabel>
+                      <Textarea
+                        id="variant-colors"
+                        rows={3}
+                        value={colorDraft}
+                        onChange={(event) => setColorDraft(event.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="variant-sizes">Tamanhos</FieldLabel>
+                      <Textarea
+                        id="variant-sizes"
+                        rows={3}
+                        value={sizeDraft}
+                        onChange={(event) => setSizeDraft(event.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="variant-sku-prefix">
+                        Prefixo SKU
+                      </FieldLabel>
+                      <Input
+                        id="variant-sku-prefix"
+                        value={skuPrefix}
+                        onChange={(event) => setSkuPrefix(event.target.value)}
+                        placeholder="CLA-AURORA"
+                        disabled={isSubmitting}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={isSubmitting}
+                        onClick={handleGenerateVariants}
+                        className="mt-2 w-full">
+                        <Sparkles data-icon="inline-start" />
+                        Gerar
+                      </Button>
+                    </Field>
+                  </FieldGroup>
+                </FieldSet>
+
+                <FieldSet className="rounded-lg border bg-muted/20 p-4">
+                  <FieldLegend variant="label">Valores padrão</FieldLegend>
+                  <FieldDescription>
+                    Preço, estoque e status usados nas novas combinações.
+                  </FieldDescription>
+                  <FieldGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+                    <Field>
+                      <FieldLabel htmlFor="variant-default-price">
+                        Preço
+                      </FieldLabel>
+                      <Input
+                        id="variant-default-price"
+                        type="text"
+                        inputMode="decimal"
+                        value={toReaisDisplayValue(
+                          effectiveVariantDefaults.price,
+                        )}
+                        onChange={handleVariantDefaultAmountChange("price")}
+                        placeholder="R$ 0,00"
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="variant-default-compareAtPrice">
+                        Comparação
+                      </FieldLabel>
+                      <Input
+                        id="variant-default-compareAtPrice"
+                        type="text"
+                        inputMode="decimal"
+                        value={toReaisDisplayValue(
+                          effectiveVariantDefaults.compareAtPrice,
+                        )}
+                        onChange={handleVariantDefaultAmountChange(
+                          "compareAtPrice",
+                        )}
+                        placeholder="R$ 0,00"
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="variant-default-stockQuantity">
+                        Estoque
+                      </FieldLabel>
+                      <Input
+                        id="variant-default-stockQuantity"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        value={variantDefaults.stockQuantity}
+                        onChange={(event) =>
+                          updateVariantDefault(
+                            "stockQuantity",
+                            event.target.value,
+                          )
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="variant-default-lowStockThreshold">
+                        Baixo
+                      </FieldLabel>
+                      <Input
+                        id="variant-default-lowStockThreshold"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        value={variantDefaults.lowStockThreshold}
+                        onChange={(event) =>
+                          updateVariantDefault(
+                            "lowStockThreshold",
+                            event.target.value,
+                          )
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="variant-default-weightGrams">
+                        Peso g
+                      </FieldLabel>
+                      <Input
+                        id="variant-default-weightGrams"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        value={variantDefaults.weightGrams}
+                        onChange={(event) =>
+                          updateVariantDefault(
+                            "weightGrams",
+                            event.target.value,
+                          )
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </Field>
+                    <Field orientation="horizontal" className="self-end pb-1">
+                      <Checkbox
+                        id="variant-default-isActive"
+                        checked={variantDefaults.isActive}
+                        onCheckedChange={(checked) =>
+                          updateVariantDefault("isActive", checked === true)
+                        }
+                        disabled={isSubmitting}
+                      />
+                      <FieldContent>
+                        <FieldLabel htmlFor="variant-default-isActive">
+                          Ativa
+                        </FieldLabel>
+                      </FieldContent>
+                    </Field>
+                  </FieldGroup>
+                  <div className="flex justify-end">
                     <Button
                       type="button"
-                      variant="secondary"
+                      variant="outline"
                       disabled={isSubmitting}
-                      onClick={handleGenerateVariants}
-                      className="mt-2 w-full">
-                      <Sparkles data-icon="inline-start" />
-                      Gerar
+                      onClick={handleApplyVariantDefaults}>
+                      <Check data-icon="inline-start" />
+                      Aplicar à grade
                     </Button>
-                  </Field>
-                </FieldGroup>
-              </FieldSet>
-
-              <FieldSet className="rounded-lg border bg-muted/20 p-4">
-                <FieldLegend variant="label">Valores padrão</FieldLegend>
-                <FieldDescription>
-                  Preço, estoque e status usados nas novas combinações.
-                </FieldDescription>
-                <FieldGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-                  <Field>
-                    <FieldLabel htmlFor="variant-default-price">
-                      Preço
-                    </FieldLabel>
-                    <Input
-                      id="variant-default-price"
-                      type="text"
-                      inputMode="decimal"
-                      value={toReaisDisplayValue(variantDefaults.price)}
-                      onChange={handleVariantDefaultAmountChange("price")}
-                      placeholder="R$ 0,00"
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="variant-default-compareAtPrice">
-                      Comparação
-                    </FieldLabel>
-                    <Input
-                      id="variant-default-compareAtPrice"
-                      type="text"
-                      inputMode="decimal"
-                      value={toReaisDisplayValue(
-                        variantDefaults.compareAtPrice,
-                      )}
-                      onChange={handleVariantDefaultAmountChange(
-                        "compareAtPrice",
-                      )}
-                      placeholder="R$ 0,00"
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="variant-default-stockQuantity">
-                      Estoque
-                    </FieldLabel>
-                    <Input
-                      id="variant-default-stockQuantity"
-                      type="number"
-                      min="0"
-                      step="1"
-                      inputMode="numeric"
-                      value={variantDefaults.stockQuantity}
-                      onChange={(event) =>
-                        updateVariantDefault(
-                          "stockQuantity",
-                          event.target.value,
-                        )
-                      }
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="variant-default-lowStockThreshold">
-                      Baixo
-                    </FieldLabel>
-                    <Input
-                      id="variant-default-lowStockThreshold"
-                      type="number"
-                      min="0"
-                      step="1"
-                      inputMode="numeric"
-                      value={variantDefaults.lowStockThreshold}
-                      onChange={(event) =>
-                        updateVariantDefault(
-                          "lowStockThreshold",
-                          event.target.value,
-                        )
-                      }
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="variant-default-weightGrams">
-                      Peso g
-                    </FieldLabel>
-                    <Input
-                      id="variant-default-weightGrams"
-                      type="number"
-                      min="0"
-                      step="1"
-                      inputMode="numeric"
-                      value={variantDefaults.weightGrams}
-                      onChange={(event) =>
-                        updateVariantDefault("weightGrams", event.target.value)
-                      }
-                      disabled={isSubmitting}
-                    />
-                  </Field>
-                  <Field orientation="horizontal" className="self-end pb-1">
-                    <Checkbox
-                      id="variant-default-isActive"
-                      checked={variantDefaults.isActive}
-                      onCheckedChange={(checked) =>
-                        updateVariantDefault("isActive", checked === true)
-                      }
-                      disabled={isSubmitting}
-                    />
-                    <FieldContent>
-                      <FieldLabel htmlFor="variant-default-isActive">
-                        Ativa
-                      </FieldLabel>
-                    </FieldContent>
-                  </Field>
-                </FieldGroup>
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isSubmitting}
-                    onClick={handleApplyVariantDefaults}>
-                    <Check data-icon="inline-start" />
-                    Aplicar à grade
-                  </Button>
-                </div>
-              </FieldSet>
-
-              <Field data-invalid={!!errors.variants}>
-                <div className="flex items-center justify-between gap-3">
-                  <FieldLabel>Grade de variantes</FieldLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isSubmitting}
-                    onClick={() => append(buildVariantWithDefaults())}>
-                    <Plus data-icon="inline-start" />
-                    Variante
-                  </Button>
-                </div>
-                <ScrollArea className="w-full rounded-lg border">
-                  <div className="min-w-295">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-36">SKU</TableHead>
-                          <TableHead className="min-w-36">Cor</TableHead>
-                          <TableHead className="min-w-28">Hex</TableHead>
-                          <TableHead className="min-w-24">Tamanho</TableHead>
-                          <TableHead className="min-w-32">Preço</TableHead>
-                          <TableHead className="min-w-32">Comparação</TableHead>
-                          <TableHead className="min-w-24">Estoque</TableHead>
-                          <TableHead className="min-w-24">Baixo</TableHead>
-                          <TableHead className="min-w-24">Peso g</TableHead>
-                          <TableHead className="min-w-28">Ativa</TableHead>
-                          <TableHead className="w-12" />
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {fields.map((field, index) => (
-                          <ProductFormVariantRow
-                            key={field.fieldId}
-                            index={index}
-                            canRemove={fields.length > 1}
-                            disabled={isSubmitting}
-                            errors={errors}
-                            control={control}
-                            onRemove={() => remove(index)}
-                          />
-                        ))}
-                      </TableBody>
-                    </Table>
                   </div>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-                <FieldError
-                  errors={
-                    errors.variants?.message
-                      ? [{ message: errors.variants.message }]
-                      : undefined
-                  }
-                />
-              </Field>
-            </CardContent>
-          </Card>
-        }
-      />
-    </form>
+                </FieldSet>
+
+                <Field data-invalid={!!errors.variants}>
+                  <div className="flex items-center justify-between gap-3">
+                    <FieldLabel>Grade de variantes</FieldLabel>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isSubmitting}
+                      onClick={() => append(buildVariantWithDefaults())}>
+                      <Plus data-icon="inline-start" />
+                      Variante
+                    </Button>
+                  </div>
+                  <ScrollArea className="w-full rounded-lg border">
+                    <div className="min-w-295">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-36">SKU</TableHead>
+                            <TableHead className="min-w-36">Cor</TableHead>
+                            <TableHead className="min-w-28">Hex</TableHead>
+                            <TableHead className="min-w-24">Tamanho</TableHead>
+                            <TableHead className="min-w-32">Preço</TableHead>
+                            <TableHead className="min-w-32">
+                              Comparação
+                            </TableHead>
+                            <TableHead className="min-w-24">Estoque</TableHead>
+                            <TableHead className="min-w-24">Baixo</TableHead>
+                            <TableHead className="min-w-24">Peso g</TableHead>
+                            <TableHead className="min-w-28">Ativa</TableHead>
+                            <TableHead className="w-12" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {fields.map((field, index) => (
+                            <ProductFormVariantRow
+                              key={field.fieldId}
+                              index={index}
+                              canRemove={fields.length > 1}
+                              disabled={isSubmitting}
+                              errors={errors}
+                              control={control}
+                              onRemove={() => remove(index)}
+                            />
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                  <FieldError
+                    errors={
+                      errors.variants?.message
+                        ? [{ message: errors.variants.message }]
+                        : undefined
+                    }
+                  />
+                </Field>
+              </CardContent>
+            </Card>
+          }
+        />
+      </form>
+    </>
   );
 };
