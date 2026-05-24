@@ -11,6 +11,10 @@ export type ProductInput = RouterInput["products"]["get"];
 export type ProductOutput = RouterOutput["products"]["get"];
 export type StoreProductInput = RouterInput["products"]["getStoreProduct"];
 export type StoreProductOutput = RouterOutput["products"]["getStoreProduct"];
+export type StoreProductsInput = RouterInput["products"]["listStoreProducts"];
+export type StoreProductsOutput =
+  RouterOutput["products"]["listStoreProducts"];
+export type StoreProductListItem = StoreProductsOutput["data"][number];
 export type StoreRelatedProductsInput =
   RouterInput["products"]["getStoreRelatedProducts"];
 export type StoreRelatedProductsOutput =

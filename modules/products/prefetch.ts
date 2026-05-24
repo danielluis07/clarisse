@@ -1,9 +1,14 @@
 import "server-only";
 
-import type { InventoryInput, ProductsInput } from "@/modules/products/types";
+import type {
+  InventoryInput,
+  ProductsInput,
+  StoreProductsInput,
+} from "@/modules/products/types";
 import {
   normalizeInventoryParams,
   normalizeProductsParams,
+  normalizeStoreProductsParams,
 } from "@/modules/products/utils";
 import { prefetch, trpc } from "@/trpc/server";
 
@@ -19,6 +24,16 @@ export const prefetchProduct = async (id: string) => {
 
 export const prefetchStoreProduct = async (slug: string) => {
   return prefetch(trpc.products.getStoreProduct.queryOptions({ slug }));
+};
+
+export const prefetchStoreProducts = async (
+  params: Partial<StoreProductsInput>,
+) => {
+  return prefetch(
+    trpc.products.listStoreProducts.queryOptions(
+      normalizeStoreProductsParams(params),
+    ),
+  );
 };
 
 export const prefetchStoreRelatedProducts = async (
