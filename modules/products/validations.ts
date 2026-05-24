@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { MAX_ANALYSIS_IMAGES, PAGINATION } from "@/constants";
+import { STORE_PRODUCTS_PER_PAGE } from "@/modules/products/constants";
 
 export const productStatusSchema = z.enum(["draft", "active", "archived"]);
 export const productSortBySchema = z.enum([
@@ -433,7 +434,7 @@ export const listProductsInput = z
 
 export const listStoreProductsInput = z.object({
   page: z.number().int().min(1).default(1),
-  perPage: z.number().int().min(1).max(48).default(12),
+  perPage: z.number().int().min(1).max(48).default(STORE_PRODUCTS_PER_PAGE),
   search: z.string().trim().max(120).optional(),
   sortBy: storeProductSortBySchema.default("publishedAt"),
   sortOrder: productSortOrderSchema.default("desc"),

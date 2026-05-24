@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MAX_FILE_SIZE_BYTES, PAGINATION } from "@/constants";
 import { ALLOWED_IMAGE_MIME_TYPES } from "@/modules/media/validations";
+import { STORE_PRODUCTS_PER_PAGE } from "@/modules/products/constants";
 import type {
   ImageMessagePart,
   InventoryInput,
@@ -35,8 +36,6 @@ export type StoreProductsSearchParams = Record<
 >;
 
 export type VariantStockState = "in_stock" | "low_stock" | "out_of_stock";
-
-export const STORE_PRODUCTS_PER_PAGE = 12;
 
 export const normalizeProductsParams = (
   params: Partial<ProductsInput>,

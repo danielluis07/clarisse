@@ -1,0 +1,1 @@
+export const STORE_PRODUCTS_PER_PAGE = 12;

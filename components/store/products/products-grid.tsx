@@ -3,6 +3,7 @@
 import { ProductCard } from "@/components/store/product-card";
 import { ProductsPagination } from "@/components/store/products/products-pagination";
 import { ProductsToolbar } from "@/components/store/products/products-toolbar";
+import { centsToReais } from "@/lib/utils";
 import { useStoreProductsSuspense } from "@/modules/products/hooks";
 import { parseStoreProductsSearchParams } from "@/modules/products/utils";
 import { useSearchParams } from "next/navigation";
@@ -24,14 +25,12 @@ export const ProductsGrid = () => {
           <div className="grid grid-cols-2 gap-x-3 gap-y-12 md:gap-x-6 md:gap-y-16 lg:grid-cols-4 lg:gap-x-8">
             {data.map((product, index) => {
               const fallback =
-                FALLBACK_PRODUCT_IMAGES[
-                  index % FALLBACK_PRODUCT_IMAGES.length
-                ];
-              const price = formatCurrency(product.basePriceCents);
+                FALLBACK_PRODUCT_IMAGES[index % FALLBACK_PRODUCT_IMAGES.length];
+              const price = centsToReais(product.basePriceCents);
               const comparePrice =
                 product.compareAtPriceCents &&
                 product.compareAtPriceCents > product.basePriceCents
-                  ? formatCurrency(product.compareAtPriceCents)
+                  ? centsToReais(product.compareAtPriceCents)
                   : undefined;
 
               return (
@@ -69,12 +68,6 @@ export const ProductsGrid = () => {
   );
 };
 
-const formatCurrency = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
-
 const getProductBadge = ({
   isFeatured,
   hasStock,
@@ -95,9 +88,7 @@ const getProductBadge = ({
 const ProductsEmptyState = ({ search }: { search?: string }) => {
   return (
     <div className="border-y border-foreground/10 py-20 text-center">
-      <p className="text-xs uppercase text-foreground/55">
-        Nenhum resultado
-      </p>
+      <p className="text-xs uppercase text-foreground/55">Nenhum resultado</p>
       <h2 className="mx-auto mt-4 max-w-2xl font-heading text-4xl font-light leading-tight md:text-5xl">
         Não encontramos peças para esta busca.
       </h2>
