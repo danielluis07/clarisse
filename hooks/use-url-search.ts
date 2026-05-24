@@ -26,7 +26,10 @@ export function useURLSearch(debounceMs = 500) {
     params.delete("page");
 
     startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
     });
   }, [debouncedSearch, pathname, router, searchParam, searchParams]);
 

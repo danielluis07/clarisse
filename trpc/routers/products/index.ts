@@ -42,6 +42,7 @@ import {
   getProductInput,
   getStoreProductInput,
   getStoreRelatedProductsInput,
+  listStoreProductsInput,
   listInventoryInput,
   listProductsInput,
   replaceProductVariantsInput,
@@ -301,6 +302,209 @@ export const productsRouter = createTRPCRouter({
       },
     };
   }),
+
+  listStoreProducts: baseProcedure
+    .input(listStoreProductsInput)
+    .query(async ({ input }) => {
+      const { page, perPage, search, sortBy, sortOrder } = input;
+      const offset = (page - 1) * perPage;
+      const conditions = [eq(products.status, "active")];
+
+      if (search) {
+        const escapedSearch = escapeLikeWildcards(search);
+        const searchCondition = or(
+          ilike(products.name, `%${escapedSearch}%`),
+          ilike(products.subtitle, `%${escapedSearch}%`),
+          ilike(products.description, `%${escapedSearch}%`),
+        );
+
+        if (searchCondition) conditions.push(searchCondition);
+      }
+
+      const orderByColumn = {
+        createdAt: products.createdAt,
+        publishedAt: products.publishedAt,
+        name: products.name,
+        basePriceCents: products.basePriceCents,
+      }[sortBy];
+      const orderBy =
+        sortBy === "publishedAt"
+          ? sortOrder === "asc"
+            ? [
+                sql`${products.publishedAt} asc nulls last`,
+                asc(products.createdAt),
+                asc(products.id),
+              ]
+            : [
+                sql`${products.publishedAt} desc nulls last`,
+                desc(products.createdAt),
+                desc(products.id),
+              ]
+          : sortOrder === "asc"
+            ? [asc(orderByColumn), asc(products.id)]
+            : [desc(orderByColumn), desc(products.id)];
+      const whereClause = and(...conditions);
+
+      const [rows, total] = await Promise.all([
+        db
+          .select({
+            id: products.id,
+            name: products.name,
+            slug: products.slug,
+            subtitle: products.subtitle,
+            basePriceCents: products.basePriceCents,
+            compareAtPriceCents: products.compareAtPriceCents,
+            currency: products.currency,
+            isFeatured: products.isFeatured,
+            publishedAt: products.publishedAt,
+            createdAt: products.createdAt,
+            categoryName: categories.name,
+            categorySlug: categories.slug,
+          })
+          .from(products)
+          .leftJoin(categories, eq(products.categoryId, categories.id))
+          .where(whereClause)
+          .orderBy(...orderBy)
+          .limit(perPage)
+          .offset(offset),
+        db
+          .select({ count: count() })
+          .from(products)
+          .where(whereClause)
+          .then(([result]) => result?.count ?? 0),
+      ]);
+
+      const productIds = rows.map((row) => row.id);
+      const [imageRows, variantRows] = productIds.length
+        ? await Promise.all([
+            db
+              .select({
+                productId: productImages.productId,
+                isPrimary: productImages.isPrimary,
+                position: productImages.position,
+                colorName: productImages.colorName,
+                colorHex: productImages.colorHex,
+                url: mediaAssets.url,
+                altText: productImages.altText,
+                assetAltText: mediaAssets.altText,
+              })
+              .from(productImages)
+              .innerJoin(
+                mediaAssets,
+                eq(productImages.mediaAssetId, mediaAssets.id),
+              )
+              .where(inArray(productImages.productId, productIds))
+              .orderBy(
+                asc(productImages.productId),
+                desc(productImages.isPrimary),
+                asc(productImages.position),
+                asc(productImages.id),
+              ),
+            db
+              .select({
+                productId: productVariants.productId,
+                colorName: productVariants.colorName,
+                colorHex: productVariants.colorHex,
+                stockQuantity: productVariants.stockQuantity,
+              })
+              .from(productVariants)
+              .where(
+                and(
+                  inArray(productVariants.productId, productIds),
+                  eq(productVariants.isActive, true),
+                ),
+              )
+              .orderBy(
+                asc(productVariants.productId),
+                asc(productVariants.displayOrder),
+                asc(productVariants.id),
+              ),
+          ])
+        : [[], []];
+
+      const imagesByProductId = new Map<string, typeof imageRows>();
+      imageRows.forEach((image) => {
+        const list = imagesByProductId.get(image.productId);
+        if (list) {
+          list.push(image);
+        } else {
+          imagesByProductId.set(image.productId, [image]);
+        }
+      });
+
+      const variantsByProductId = new Map<string, typeof variantRows>();
+      variantRows.forEach((variant) => {
+        const list = variantsByProductId.get(variant.productId);
+        if (list) {
+          list.push(variant);
+        } else {
+          variantsByProductId.set(variant.productId, [variant]);
+        }
+      });
+
+      return {
+        data: rows.map((row) => {
+          const productImagesForRow = imagesByProductId.get(row.id) ?? [];
+          const [primary, secondary] = productImagesForRow;
+          const productVariantsForRow = variantsByProductId.get(row.id) ?? [];
+          const colorsByName = new Map<
+            string,
+            { name: string; hex: string | null }
+          >();
+
+          productVariantsForRow.forEach((variant) => {
+            const colorKey = variant.colorName.trim().toLowerCase();
+            const existing = colorsByName.get(colorKey);
+
+            if (!existing || (!existing.hex && variant.colorHex)) {
+              colorsByName.set(colorKey, {
+                name: variant.colorName,
+                hex: variant.colorHex,
+              });
+            }
+          });
+
+          return {
+            id: row.id,
+            name: row.name,
+            slug: row.slug,
+            subtitle: row.subtitle,
+            basePriceCents: row.basePriceCents,
+            compareAtPriceCents: row.compareAtPriceCents,
+            currency: row.currency,
+            isFeatured: row.isFeatured,
+            publishedAt: row.publishedAt,
+            createdAt: row.createdAt,
+            category: row.categoryName
+              ? { name: row.categoryName, slug: row.categorySlug }
+              : null,
+            primaryImage: primary
+              ? {
+                  url: primary.url,
+                  altText: primary.altText ?? primary.assetAltText,
+                }
+              : null,
+            hoverImage:
+              secondary && secondary.url !== primary?.url
+                ? {
+                    url: secondary.url,
+                    altText: secondary.altText ?? secondary.assetAltText,
+                  }
+                : null,
+            colors: Array.from(colorsByName.values()),
+            hasStock: productVariantsForRow.some(
+              (variant) => variant.stockQuantity > 0,
+            ),
+          };
+        }),
+        pagination: {
+          page,
+          perPage,
+          total,
+          totalPages: Math.ceil(total / perPage),
+        },
+      };
+    }),
 
   get: adminProcedure.input(getProductInput).query(async ({ input }) => {
     const [row] = await db

@@ -11,11 +11,13 @@ import type {
   ProductInput,
   ProductsInput,
   StoreProductInput,
+  StoreProductsInput,
   StoreRelatedProductsInput,
 } from "@/modules/products/types";
 import {
   normalizeInventoryParams,
   normalizeProductsParams,
+  normalizeStoreProductsParams,
 } from "@/modules/products/utils";
 import { useTRPC } from "@/trpc/client";
 
@@ -36,6 +38,17 @@ export const useStoreProductSuspense = (params: StoreProductInput) => {
   const trpc = useTRPC();
 
   return useSuspenseQuery(trpc.products.getStoreProduct.queryOptions(params));
+};
+
+export const useStoreProductsSuspense = (
+  params: Partial<StoreProductsInput>,
+) => {
+  const trpc = useTRPC();
+  const normalized = normalizeStoreProductsParams(params);
+
+  return useSuspenseQuery(
+    trpc.products.listStoreProducts.queryOptions(normalized),
+  );
 };
 
 export const useStoreRelatedProductsSuspense = (

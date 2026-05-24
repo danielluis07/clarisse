@@ -12,6 +12,12 @@ export const productSortBySchema = z.enum([
   "basePriceCents",
 ]);
 export const productSortOrderSchema = z.enum(["asc", "desc"]);
+export const storeProductSortBySchema = z.enum([
+  "publishedAt",
+  "createdAt",
+  "name",
+  "basePriceCents",
+]);
 
 export const inventoryStockStatusSchema = z.enum([
   "in_stock",
@@ -425,6 +431,14 @@ export const listProductsInput = z
     },
   );
 
+export const listStoreProductsInput = z.object({
+  page: z.number().int().min(1).default(1),
+  perPage: z.number().int().min(1).max(48).default(12),
+  search: z.string().trim().max(120).optional(),
+  sortBy: storeProductSortBySchema.default("publishedAt"),
+  sortOrder: productSortOrderSchema.default("desc"),
+});
+
 export const getProductInput = z.object({
   id: z.string().min(1, "ID do produto é obrigatório"),
 });
@@ -549,6 +563,13 @@ export const productsSearchParamsSchema = z.object({
   isFeatured: booleanSearchParam.optional(),
   createdAtFrom: isoDate.optional(),
   createdAtTo: isoDate.optional(),
+});
+
+export const storeProductsSearchParamsSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  search: z.string().trim().max(120).optional(),
+  sortBy: storeProductSortBySchema.optional(),
+  sortOrder: productSortOrderSchema.optional(),
 });
 
 export const inventorySearchParamsSchema = z.object({

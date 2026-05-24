@@ -8,11 +8,13 @@ import type {
   ProductAiCatalogOptions,
   ProductAiImageInput,
   ProductsInput,
+  StoreProductsInput,
 } from "@/modules/products/types";
 import {
   imageDescriptorsSchema,
   inventorySearchParamsSchema,
   productsSearchParamsSchema,
+  storeProductsSearchParamsSchema,
   type ImageDescriptor,
   type ProductImageAnalysis,
 } from "@/modules/products/validations";
@@ -27,7 +29,14 @@ export type InventorySearchParams = Record<
   string | string[] | undefined
 >;
 
+export type StoreProductsSearchParams = Record<
+  string,
+  string | string[] | undefined
+>;
+
 export type VariantStockState = "in_stock" | "low_stock" | "out_of_stock";
+
+export const STORE_PRODUCTS_PER_PAGE = 12;
 
 export const normalizeProductsParams = (
   params: Partial<ProductsInput>,
@@ -52,6 +61,30 @@ export const parseProductsSearchParams = (
   const result = productsSearchParamsSchema.safeParse(params);
 
   return normalizeProductsParams(result.success ? result.data : {});
+};
+
+export const normalizeStoreProductsParams = (
+  params: Partial<StoreProductsInput>,
+): StoreProductsInput => ({
+  page: params.page ?? PAGINATION.DEFAULT_PAGE,
+  perPage: params.perPage ?? STORE_PRODUCTS_PER_PAGE,
+  search: params.search || undefined,
+  sortBy:
+    params.sortBy === "createdAt" ||
+    params.sortBy === "publishedAt" ||
+    params.sortBy === "name" ||
+    params.sortBy === "basePriceCents"
+      ? params.sortBy
+      : "publishedAt",
+  sortOrder: params.sortOrder ?? "desc",
+});
+
+export const parseStoreProductsSearchParams = (
+  params: StoreProductsSearchParams,
+) => {
+  const result = storeProductsSearchParamsSchema.safeParse(params);
+
+  return normalizeStoreProductsParams(result.success ? result.data : {});
 };
 
 export const normalizeInventoryParams = (
