@@ -91,15 +91,26 @@ const CreateBannerForm = () => {
       mobileImageId: string | null;
       uploadedAssetIds: string[];
     },
-  ) => {
-    await mutateAsync({
-      ...values,
-      imageId: images.imageId,
-      mobileImageId: images.mobileImageId,
-    });
-    toast.success("Banner criado com sucesso.");
-    router.push("/admin/banners");
-    router.refresh();
+  ): Promise<BannerOutput | null> => {
+    let createdBanner: BannerOutput | null = null;
+
+    try {
+      createdBanner = await mutateAsync({
+        ...values,
+        imageId: images.imageId,
+        mobileImageId: images.mobileImageId,
+      });
+      toast.success("Banner criado com sucesso.");
+      return createdBanner;
+    } catch (error) {
+      toast.error(getBannerFormErrorMessage(error));
+      return null;
+    } finally {
+      if (createdBanner) {
+        router.push("/admin/banners");
+        router.refresh();
+      }
+    }
   };
 
   return (
@@ -126,16 +137,26 @@ const UpdateBannerForm = ({ id }: { id: string }) => {
   const handleSubmit = async (
     values: BannerFormOutput,
     images: ResolvedBannerImages,
-  ) => {
-    const updated = await mutateAsync({
-      id,
-      ...values,
-      imageId: images.imageId,
-      mobileImageId: images.mobileImageId,
-    });
-    toast.success("Banner atualizado com sucesso.");
-    router.refresh();
-    return updated;
+  ): Promise<BannerOutput | null> => {
+    let updatedBanner: BannerOutput | null = null;
+
+    try {
+      updatedBanner = await mutateAsync({
+        id,
+        ...values,
+        imageId: images.imageId,
+        mobileImageId: images.mobileImageId,
+      });
+      toast.success("Banner atualizado com sucesso.");
+      return updatedBanner;
+    } catch (error) {
+      toast.error(getBannerFormErrorMessage(error));
+      return null;
+    } finally {
+      if (updatedBanner) {
+        router.refresh();
+      }
+    }
   };
 
   return (
@@ -166,7 +187,7 @@ const BannerFormBody = ({
   onSubmit: (
     values: BannerFormOutput,
     images: ResolvedBannerImages,
-  ) => Promise<unknown>;
+  ) => Promise<BannerOutput | null>;
 }) => {
   const router = useRouter();
   const deleteBanner = useDeleteBanner();
@@ -248,8 +269,24 @@ const BannerFormBody = ({
       uploadedAssetIds = images.uploadedAssetIds;
       const result = await onSubmit(values, images);
 
-      if (orphanedAssetIds.length) {
-        await cleanupAssets(orphanedAssetIds);
+      if (!result) {
+        await cleanupAssets(uploadedAssetIds);
+        return;
+      }
+
+      const selectedAssetIds = new Set(
+        [imageValue.desktop, imageValue.mobile]
+          .filter(
+            (item): item is MediaSelectionItem & { kind: "existing" } =>
+              item?.kind === "existing",
+          )
+          .map((item) => item.assetId),
+      );
+      const trulyOrphaned = orphanedAssetIds.filter(
+        (id) => !selectedAssetIds.has(id),
+      );
+      if (trulyOrphaned.length) {
+        await cleanupAssets(trulyOrphaned);
         setOrphanedAssetIds([]);
       }
 

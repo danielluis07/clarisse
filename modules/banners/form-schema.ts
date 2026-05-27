@@ -17,7 +17,7 @@ const optionalCtaUrlField = z
   .refine(
     (value) =>
       !value ||
-      value.startsWith("/") ||
+      (value.startsWith("/") && !value.startsWith("//")) ||
       value.startsWith("https://") ||
       value.startsWith("http://"),
     "URL do CTA deve ser relativa ou começar com http:// ou https://",
