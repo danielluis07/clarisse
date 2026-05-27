@@ -29,15 +29,3 @@ export const assertBannerImageAssetsExist = async (
     });
   }
 };
-
-export const assertBannerDateRange = (
-  startsAt: Date | null | undefined,
-  endsAt: Date | null | undefined,
-) => {
-  if (startsAt && endsAt && endsAt < startsAt) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "`endsAt` deve ser maior ou igual a `startsAt`",
-    });
-  }
-};

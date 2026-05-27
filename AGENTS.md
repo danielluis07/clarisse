@@ -6,6 +6,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 <!-- END:nextjs-agent-rules -->
 
+# Dev Server
+
+I prefer to run the dev server myself when I’m ready to test changes.
+
 # Project Overview
 
 This project is a fictional Brazilian women's editorial fashion e-commerce called Clarisse.

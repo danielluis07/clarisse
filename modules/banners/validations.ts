@@ -25,8 +25,6 @@ export const bannerSortBySchema = z.enum([
   "placement",
   "status",
   "displayOrder",
-  "startsAt",
-  "endsAt",
 ]);
 export const bannerSortOrderSchema = z.enum(["asc", "desc"]);
 
@@ -36,17 +34,6 @@ const optionalText = z
   .transform((value) => value || null)
   .nullable()
   .optional();
-
-const optionalDateTime = z.preprocess(
-  (value) => {
-    if (value === undefined) return undefined;
-    if (value === null || value === "") return null;
-    if (value instanceof Date) return value;
-    if (typeof value === "string") return new Date(value);
-    return value;
-  },
-  z.date({ message: "Data inválida" }).nullable().optional(),
-);
 
 const optionalCtaUrl = z
   .string()
@@ -96,16 +83,7 @@ const bannerBaseInput = z
       .int("Ordem de exibição deve ser um número inteiro")
       .min(0, "Ordem de exibição não pode ser negativa")
       .default(0),
-    startsAt: optionalDateTime,
-    endsAt: optionalDateTime,
-  })
-  .refine(
-    ({ startsAt, endsAt }) => !startsAt || !endsAt || endsAt >= startsAt,
-    {
-      path: ["endsAt"],
-      message: "`endsAt` deve ser maior ou igual a `startsAt`",
-    },
-  );
+  });
 
 export const listBannersInput = z
   .object({
@@ -130,7 +108,6 @@ export const listBannersInput = z
 
 export const listStoreBannersInput = z.object({
   placement: bannerPlacementSchema.optional(),
-  at: optionalDateTime.default(() => new Date()),
 });
 
 export const getBannerInput = z.object({
@@ -172,21 +149,7 @@ export const bannerUpdateFields = z
       .int("Ordem de exibição deve ser um número inteiro")
       .min(0, "Ordem de exibição não pode ser negativa")
       .optional(),
-    startsAt: optionalDateTime,
-    endsAt: optionalDateTime,
-  })
-  .refine(
-    ({ startsAt, endsAt }) =>
-      startsAt === undefined ||
-      endsAt === undefined ||
-      !startsAt ||
-      !endsAt ||
-      endsAt >= startsAt,
-    {
-      path: ["endsAt"],
-      message: "`endsAt` deve ser maior ou igual a `startsAt`",
-    },
-  );
+  });
 
 export const updateBannerInput = bannerUpdateFields.extend({
   id: z.string().min(1, "ID do banner é obrigatório"),

@@ -242,8 +242,6 @@ export const banners = pgTable(
     placement: bannerPlacementEnum("placement").notNull(),
     status: contentStatusEnum("status").notNull().default("draft"),
     displayOrder: integer("display_order").notNull().default(0),
-    startsAt: timestamp("starts_at", { withTimezone: true }),
-    endsAt: timestamp("ends_at", { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [
@@ -252,10 +250,6 @@ export const banners = pgTable(
     check(
       "banners_display_order_non_negative",
       sql`${table.displayOrder} >= 0`,
-    ),
-    check(
-      "banners_date_range_valid",
-      sql`${table.startsAt} is null or ${table.endsAt} is null or ${table.endsAt} >= ${table.startsAt}`,
     ),
   ],
 );

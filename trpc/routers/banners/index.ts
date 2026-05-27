@@ -8,7 +8,6 @@ import {
   gte,
   ilike,
   inArray,
-  isNull,
   lte,
   or,
 } from "drizzle-orm";
@@ -20,10 +19,7 @@ import {
   deleteMediaAssetRows,
   purgeMediaAssetsFromS3,
 } from "@/lib/media-server";
-import {
-  assertBannerDateRange,
-  assertBannerImageAssetsExist,
-} from "@/modules/banners/assertions";
+import { assertBannerImageAssetsExist } from "@/modules/banners/assertions";
 import { rethrowBannerWriteError } from "@/modules/banners/errors";
 import {
   bannerSelect,
@@ -87,8 +83,6 @@ export const bannersRouter = createTRPCRouter({
       placement: banners.placement,
       status: banners.status,
       displayOrder: banners.displayOrder,
-      startsAt: banners.startsAt,
-      endsAt: banners.endsAt,
     }[sortBy];
     const orderBy =
       sortOrder === "asc"
@@ -124,22 +118,11 @@ export const bannersRouter = createTRPCRouter({
   listStoreBanners: baseProcedure
     .input(listStoreBannersInput)
     .query(async ({ input }) => {
-      const activeAt = input.at ?? new Date();
       const conditions = [eq(banners.status, "active")];
-      const startsAtCondition = or(
-        isNull(banners.startsAt),
-        lte(banners.startsAt, activeAt),
-      );
-      const endsAtCondition = or(
-        isNull(banners.endsAt),
-        gte(banners.endsAt, activeAt),
-      );
 
       if (input.placement) {
         conditions.push(eq(banners.placement, input.placement));
       }
-      if (startsAtCondition) conditions.push(startsAtCondition);
-      if (endsAtCondition) conditions.push(endsAtCondition);
 
       const rows = await db
         .select(bannerSelect)
@@ -172,7 +155,6 @@ export const bannersRouter = createTRPCRouter({
     .input(createBannerInput)
     .mutation(async ({ input }) => {
       await assertBannerImageAssetsExist([input.imageId, input.mobileImageId]);
-      assertBannerDateRange(input.startsAt ?? null, input.endsAt ?? null);
 
       try {
         const [row] = await db
@@ -188,8 +170,6 @@ export const bannersRouter = createTRPCRouter({
             placement: input.placement,
             status: input.status,
             displayOrder: input.displayOrder,
-            startsAt: input.startsAt ?? null,
-            endsAt: input.endsAt ?? null,
           })
           .returning(bannerSelect);
 
@@ -230,12 +210,6 @@ export const bannersRouter = createTRPCRouter({
         values.mobileImageId,
       ]);
 
-      const nextStartsAt =
-        values.startsAt === undefined ? existing.startsAt : values.startsAt;
-      const nextEndsAt =
-        values.endsAt === undefined ? existing.endsAt : values.endsAt;
-      assertBannerDateRange(nextStartsAt, nextEndsAt);
-
       const updateValues = {
         ...(values.title !== undefined ? { title: values.title } : {}),
         ...(values.subtitle !== undefined ? { subtitle: values.subtitle } : {}),
@@ -255,8 +229,6 @@ export const bannersRouter = createTRPCRouter({
         ...(values.displayOrder !== undefined
           ? { displayOrder: values.displayOrder }
           : {}),
-        ...(values.startsAt !== undefined ? { startsAt: values.startsAt } : {}),
-        ...(values.endsAt !== undefined ? { endsAt: values.endsAt } : {}),
       };
 
       if (!Object.keys(updateValues).length) {

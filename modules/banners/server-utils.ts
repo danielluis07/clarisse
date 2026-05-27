@@ -19,8 +19,6 @@ export const bannerSelect = {
   placement: banners.placement,
   status: banners.status,
   displayOrder: banners.displayOrder,
-  startsAt: banners.startsAt,
-  endsAt: banners.endsAt,
   createdAt: banners.createdAt,
   updatedAt: banners.updatedAt,
 } as const;
