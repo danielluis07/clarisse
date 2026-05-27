@@ -172,6 +172,7 @@ export const bannersRouter = createTRPCRouter({
     .input(createBannerInput)
     .mutation(async ({ input }) => {
       await assertBannerImageAssetsExist([input.imageId, input.mobileImageId]);
+      assertBannerDateRange(input.startsAt ?? null, input.endsAt ?? null);
 
       try {
         const [row] = await db

@@ -19,7 +19,7 @@ import {
   type ImageDescriptor,
   type ProductImageAnalysis,
 } from "@/modules/products/validations";
-import { unique } from "@/lib/utils";
+import { unique } from "@/lib/array-utils";
 
 export type ProductsSearchParams = Record<
   string,

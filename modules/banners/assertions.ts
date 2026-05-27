@@ -5,7 +5,7 @@ import { inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { mediaAssets } from "@/db/schema";
-import { unique } from "@/lib/utils";
+import { unique } from "@/lib/array-utils";
 
 export const assertBannerImageAssetsExist = async (
   imageIds: Array<string | null | undefined>,

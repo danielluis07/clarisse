@@ -6,7 +6,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, collections, mediaAssets, products } from "@/db/schema";
 import type { ProductImagePayload } from "@/modules/products/types";
-import { unique } from "@/lib/utils";
+import { unique } from "@/lib/array-utils";
 
 /**
  * Assert that a category exists

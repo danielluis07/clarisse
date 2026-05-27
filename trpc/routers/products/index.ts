@@ -56,7 +56,6 @@ import {
   assertCollectionsExist,
   assertImageAssetsExist,
   assertProductExists,
-  unique,
 } from "@/modules/products/assertions";
 import {
   insertProductCollections,
@@ -70,6 +69,7 @@ import {
   productVariantSelect,
 } from "@/modules/products/queries";
 import { rethrowProductWriteError } from "@/modules/products/errors";
+import { unique } from "@/lib/array-utils";
 import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
 
 export const productsRouter = createTRPCRouter({

@@ -10,7 +10,7 @@ import {
   productImages,
   storeSettings,
 } from "@/db/schema";
-import { unique } from "@/lib/utils";
+import { unique } from "@/lib/array-utils";
 
 /**
  * Get media asset IDs that are not referenced anywhere in the database.
