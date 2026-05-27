@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MAX_ANALYSIS_IMAGES, PAGINATION } from "@/constants";
 import { STORE_PRODUCTS_PER_PAGE } from "@/modules/products/constants";
+import { isoDate } from "@/validations";
 
 export const productStatusSchema = z.enum(["draft", "active", "archived"]);
 export const productSortBySchema = z.enum([
@@ -39,8 +40,6 @@ export const inventoryMovementTypeSchema = z.enum([
   "return",
   "correction",
 ]);
-
-const isoDate = z.iso.date({ message: "Data inválida" });
 
 const optionalText = (max: number, message: string) =>
   z

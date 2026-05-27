@@ -57,9 +57,14 @@ const items = [
     url: "/admin/coupons",
     icon: <TicketPercent className="size-4" />,
   },
-  {
+  /*   {
     title: "Mídia",
     url: "/admin/media",
+    icon: <Images className="size-4" />,
+  }, */
+  {
+    title: "Banners",
+    url: "/admin/banners",
     icon: <Images className="size-4" />,
   },
   {

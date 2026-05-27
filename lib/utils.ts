@@ -69,3 +69,5 @@ export const formatReaisInput = (
   const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
   field.onChange(numericValue);
 };
+
+export const unique = (values: string[]) => Array.from(new Set(values));

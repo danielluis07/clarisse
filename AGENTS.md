@@ -16,6 +16,16 @@ The project uses a fullstack TypeScript stack with tools like Next.js, Drizzle O
 
 Clarisse should feel like a premium, minimal, editorial fashion brand. The storefront should focus on women's fashion products such as blazers, tailored pants, minimalist dresses, oversized shirts, sophisticated bags, skirts, and premium basics.
 
+# App API pattern
+
+This app uses React Server Components, the fetch adapter, and @trpc/tanstack-react-query.
+
+Key features:
+
+Server Components - Prefetch data on the server and stream it to the client
+Streaming - Leverage Next.js streaming for optimal loading performance
+Suspense - Use useSuspenseQuery with Suspense boundaries for loading states
+
 # Core Storefront Concept
 
 The public storefront is the customer-facing part of the application.

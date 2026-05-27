@@ -19,6 +19,7 @@ import {
   type ImageDescriptor,
   type ProductImageAnalysis,
 } from "@/modules/products/validations";
+import { unique } from "@/lib/utils";
 
 export type ProductsSearchParams = Record<
   string,
@@ -470,5 +471,3 @@ const clampInteger = (value: number, min: number, max: number) => {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, Math.round(value)));
 };
-
-const unique = (values: string[]) => Array.from(new Set(values));

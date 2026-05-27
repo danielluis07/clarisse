@@ -31,6 +31,7 @@ import {
   deleteMediaAssetRows,
   purgeMediaAssetsFromS3,
 } from "@/lib/media-server";
+import { getUnusedMediaAssetIds } from "@/modules/media/server-utils";
 import { getVariantStockState } from "@/modules/products/utils";
 import {
   adjustInventoryInput,
@@ -58,7 +59,6 @@ import {
   unique,
 } from "@/modules/products/assertions";
 import {
-  getUnusedMediaAssetIds,
   insertProductCollections,
   insertProductImages,
   mapProductRow,
