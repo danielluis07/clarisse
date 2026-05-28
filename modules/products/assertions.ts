@@ -6,11 +6,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, collections, mediaAssets, products } from "@/db/schema";
 import type { ProductImagePayload } from "@/modules/products/types";
-
-/**
- * Get unique values from array
- */
-export const unique = <T>(values: T[]) => Array.from(new Set(values));
+import { unique } from "@/lib/array-utils";
 
 /**
  * Assert that a category exists

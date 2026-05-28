@@ -14,6 +14,7 @@ import {
   TEMPORARY_MEDIA_TTL_MS,
   TEMPORARY_PRODUCT_IMAGE_ANALYSIS_PURPOSE,
 } from "@/modules/media/constants";
+import { getUnusedMediaAssetIds } from "@/modules/media/server-utils";
 import {
   createPresignedUploadInput,
   deleteAssetInput,
@@ -21,11 +22,8 @@ import {
   getAssetsByIdsInput,
   registerAssetInput,
 } from "@/modules/media/validations";
-import { getUnusedMediaAssetIds } from "@/modules/products/operations";
 import { adminProcedure, createTRPCRouter } from "@/trpc/init";
-
-const sanitizeFilename = (filename: string) =>
-  filename.replace(/^.*[\\/]/, "").replace(/[^a-zA-Z0-9._-]/g, "_");
+import { sanitizeFilename } from "@/modules/media/utils";
 
 const buildPublicUrl = (key: string) =>
   `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;

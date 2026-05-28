@@ -31,6 +31,7 @@ import {
   deleteMediaAssetRows,
   purgeMediaAssetsFromS3,
 } from "@/lib/media-server";
+import { getUnusedMediaAssetIds } from "@/modules/media/server-utils";
 import { getVariantStockState } from "@/modules/products/utils";
 import {
   adjustInventoryInput,
@@ -55,10 +56,8 @@ import {
   assertCollectionsExist,
   assertImageAssetsExist,
   assertProductExists,
-  unique,
 } from "@/modules/products/assertions";
 import {
-  getUnusedMediaAssetIds,
   insertProductCollections,
   insertProductImages,
   mapProductRow,
@@ -70,6 +69,7 @@ import {
   productVariantSelect,
 } from "@/modules/products/queries";
 import { rethrowProductWriteError } from "@/modules/products/errors";
+import { unique } from "@/lib/array-utils";
 import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
 
 export const productsRouter = createTRPCRouter({

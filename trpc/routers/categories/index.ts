@@ -5,6 +5,7 @@ import {
   deleteMediaAssetRows,
   purgeMediaAssetsFromS3,
 } from "@/lib/media-server";
+import { getUnusedMediaAssetIds } from "@/modules/media/server-utils";
 import {
   createCategoryInput,
   deleteCategoryInput,
@@ -197,9 +198,14 @@ export const categoriesRouter = createTRPCRouter({
           });
         }
 
-        const deletedMediaRows = data.imageId
-          ? await deleteMediaAssetRows(tx, [data.imageId])
-          : [];
+        const unusedMediaIds = await getUnusedMediaAssetIds(
+          tx,
+          data.imageId ? [data.imageId] : [],
+        );
+        const deletedMediaRows = await deleteMediaAssetRows(
+          tx,
+          unusedMediaIds,
+        );
 
         return { data, deletedMediaRows };
       });
@@ -245,7 +251,11 @@ export const categoriesRouter = createTRPCRouter({
               .map((row) => row.imageId)
               .filter((id): id is string => !!id);
 
-            const deletedMediaRows = await deleteMediaAssetRows(tx, imageIds);
+            const unusedMediaIds = await getUnusedMediaAssetIds(tx, imageIds);
+            const deletedMediaRows = await deleteMediaAssetRows(
+              tx,
+              unusedMediaIds,
+            );
 
             return { deletedRows, deletedMediaRows };
           },

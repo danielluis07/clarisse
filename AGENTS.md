@@ -6,6 +6,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 <!-- END:nextjs-agent-rules -->
 
+# Dev Server
+
+I prefer to run the dev server myself when I’m ready to test changes.
+
 # Project Overview
 
 This project is a fictional Brazilian women's editorial fashion e-commerce called Clarisse.
@@ -15,6 +19,16 @@ The goal is to build a modern, production-ready e-commerce platform inspired by 
 The project uses a fullstack TypeScript stack with tools like Next.js, Drizzle ORM, Neon Database, tRPC, Zod, React Hook Form, Tailwind CSS, shadcn/ui, Better Auth, and AWS S3.
 
 Clarisse should feel like a premium, minimal, editorial fashion brand. The storefront should focus on women's fashion products such as blazers, tailored pants, minimalist dresses, oversized shirts, sophisticated bags, skirts, and premium basics.
+
+# App API pattern
+
+This app uses React Server Components, the fetch adapter, and @trpc/tanstack-react-query.
+
+Key features:
+
+Server Components - Prefetch data on the server and stream it to the client
+Streaming - Leverage Next.js streaming for optimal loading performance
+Suspense - Use useSuspenseQuery with Suspense boundaries for loading states
 
 # Core Storefront Concept
 

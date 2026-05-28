@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PAGINATION } from "@/constants";
+import { isoDate } from "@/validations";
 
 export const categorySortBySchema = z.enum([
   "createdAt",
@@ -8,8 +9,6 @@ export const categorySortBySchema = z.enum([
   "displayOrder",
 ]);
 export const categorySortOrderSchema = z.enum(["asc", "desc"]);
-
-const isoDate = z.iso.date({ message: "Data inválida" });
 
 const optionalText = z
   .string()
