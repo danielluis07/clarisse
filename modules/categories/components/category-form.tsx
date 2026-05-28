@@ -149,11 +149,9 @@ const CategoryFormBody = ({
   ) => Promise<unknown>;
 }) => {
   const {
-    register,
     handleSubmit,
     reset,
     control,
-    formState: { errors },
   } = useForm<CategoryFormInput, unknown, CategoryFormOutput>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues,
@@ -317,63 +315,100 @@ const CategoryFormBody = ({
           <CardContent>
             <FieldGroup>
               <div className="grid gap-5 md:grid-cols-[1fr_160px]">
-                <Field data-invalid={!!errors.name}>
-                  <FieldLabel htmlFor="name">Nome</FieldLabel>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Blazers"
-                    autoComplete="off"
-                    aria-invalid={!!errors.name}
-                    disabled={isSubmitting}
-                    {...register("name")}
-                  />
-                  <FieldError
-                    errors={errors.name ? [errors.name] : undefined}
-                  />
-                </Field>
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="name">Nome</FieldLabel>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Blazers"
+                        autoComplete="off"
+                        aria-invalid={fieldState.invalid}
+                        disabled={isSubmitting}
+                        {...field}
+                      />
+                      <FieldError
+                        errors={
+                          fieldState.error ? [fieldState.error] : undefined
+                        }
+                      />
+                    </Field>
+                  )}
+                />
 
-                <Field data-invalid={!!errors.displayOrder}>
-                  <FieldLabel htmlFor="displayOrder">Ordem</FieldLabel>
-                  <Input
-                    id="displayOrder"
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    aria-invalid={!!errors.displayOrder}
-                    disabled={isSubmitting}
-                    {...register("displayOrder", { valueAsNumber: true })}
-                  />
-                  <FieldError
-                    errors={
-                      errors.displayOrder ? [errors.displayOrder] : undefined
-                    }
-                  />
-                </Field>
+                <Controller
+                  name="displayOrder"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="displayOrder">Ordem</FieldLabel>
+                      <Input
+                        id="displayOrder"
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        name={field.name}
+                        ref={field.ref}
+                        value={Number.isFinite(field.value) ? field.value : ""}
+                        onBlur={field.onBlur}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          field.onChange(
+                            value === ""
+                              ? Number.NaN
+                              : Number.parseInt(value, 10),
+                          );
+                        }}
+                        aria-invalid={fieldState.invalid}
+                        disabled={isSubmitting}
+                      />
+                      <FieldError
+                        errors={
+                          fieldState.error ? [fieldState.error] : undefined
+                        }
+                      />
+                    </Field>
+                  )}
+                />
               </div>
 
-              <Field data-invalid={!!errors.description}>
-                <FieldLabel htmlFor="description">Descrição</FieldLabel>
-                <Textarea
-                  id="description"
-                  placeholder="Peças de alfaiataria para composições elegantes."
-                  rows={4}
-                  aria-invalid={!!errors.description}
-                  disabled={isSubmitting}
-                  {...register("description")}
-                />
-                <FieldError
-                  errors={errors.description ? [errors.description] : undefined}
-                />
-              </Field>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="description">Descrição</FieldLabel>
+                    <Textarea
+                      id="description"
+                      placeholder="Peças de alfaiataria para composições elegantes."
+                      rows={4}
+                      name={field.name}
+                      ref={field.ref}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      aria-invalid={fieldState.invalid}
+                      disabled={isSubmitting}
+                    />
+                    <FieldError
+                      errors={
+                        fieldState.error ? [fieldState.error] : undefined
+                      }
+                    />
+                  </Field>
+                )}
+              />
 
               <Controller
                 name="isActive"
                 control={control}
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <Field
                     orientation="horizontal"
-                    data-invalid={!!errors.isActive}>
+                    data-invalid={fieldState.invalid}>
                     <Checkbox
                       id="isActive"
                       checked={field.value}
@@ -381,7 +416,7 @@ const CategoryFormBody = ({
                         field.onChange(checked === true)
                       }
                       disabled={isSubmitting}
-                      aria-invalid={!!errors.isActive}
+                      aria-invalid={fieldState.invalid}
                     />
                     <FieldContent>
                       <FieldLabel htmlFor="isActive">Ativa na loja</FieldLabel>
@@ -389,7 +424,9 @@ const CategoryFormBody = ({
                         Categorias inativas ficam ocultas na navegação pública.
                       </FieldDescription>
                       <FieldError
-                        errors={errors.isActive ? [errors.isActive] : undefined}
+                        errors={
+                          fieldState.error ? [fieldState.error] : undefined
+                        }
                       />
                     </FieldContent>
                   </Field>
@@ -411,41 +448,61 @@ const CategoryFormBody = ({
               </Field>
 
               <div className="grid gap-5 md:grid-cols-2">
-                <Field data-invalid={!!errors.seoTitle}>
-                  <FieldLabel htmlFor="seoTitle">Título SEO</FieldLabel>
-                  <Input
-                    id="seoTitle"
-                    type="text"
-                    placeholder="Blazers femininos | Clarisse"
-                    aria-invalid={!!errors.seoTitle}
-                    disabled={isSubmitting}
-                    {...register("seoTitle")}
-                  />
-                  <FieldError
-                    errors={errors.seoTitle ? [errors.seoTitle] : undefined}
-                  />
-                </Field>
+                <Controller
+                  name="seoTitle"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="seoTitle">Título SEO</FieldLabel>
+                      <Input
+                        id="seoTitle"
+                        type="text"
+                        placeholder="Blazers femininos | Clarisse"
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        disabled={isSubmitting}
+                      />
+                      <FieldError
+                        errors={
+                          fieldState.error ? [fieldState.error] : undefined
+                        }
+                      />
+                    </Field>
+                  )}
+                />
 
-                <Field data-invalid={!!errors.seoDescription}>
-                  <FieldLabel htmlFor="seoDescription">
-                    Descrição SEO
-                  </FieldLabel>
-                  <Textarea
-                    id="seoDescription"
-                    placeholder="Descubra blazers femininos sofisticados para rotina e ocasiões especiais."
-                    rows={3}
-                    aria-invalid={!!errors.seoDescription}
-                    disabled={isSubmitting}
-                    {...register("seoDescription")}
-                  />
-                  <FieldError
-                    errors={
-                      errors.seoDescription
-                        ? [errors.seoDescription]
-                        : undefined
-                    }
-                  />
-                </Field>
+                <Controller
+                  name="seoDescription"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="seoDescription">
+                        Descrição SEO
+                      </FieldLabel>
+                      <Textarea
+                        id="seoDescription"
+                        placeholder="Descubra blazers femininos sofisticados para rotina e ocasiões especiais."
+                        rows={3}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        aria-invalid={fieldState.invalid}
+                        disabled={isSubmitting}
+                      />
+                      <FieldError
+                        errors={
+                          fieldState.error ? [fieldState.error] : undefined
+                        }
+                      />
+                    </Field>
+                  )}
+                />
               </div>
             </FieldGroup>
           </CardContent>

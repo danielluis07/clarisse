@@ -5,7 +5,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
@@ -38,9 +38,8 @@ export const LoginForm = ({ nextPath }: { nextPath?: string }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const {
-    register,
+    control,
     handleSubmit,
-    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(signInInput),
     defaultValues: { email: "", password: "" },
@@ -93,53 +92,71 @@ export const LoginForm = ({ nextPath }: { nextPath?: string }) => {
       <CardContent className="px-8 pb-8">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FieldGroup>
-            <Field data-invalid={!!errors.email}>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="voce@exemplo.com"
-                aria-invalid={!!errors.email}
-                disabled={isLoading}
-                {...register("email")}
-              />
-              <FieldError errors={errors.email ? [errors.email] : undefined} />
-            </Field>
+            <Controller
+              name="email"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="voce@exemplo.com"
+                    aria-invalid={fieldState.invalid}
+                    disabled={isLoading}
+                    {...field}
+                  />
+                  <FieldError
+                    errors={fieldState.error ? [fieldState.error] : undefined}
+                  />
+                </Field>
+              )}
+            />
 
-            <Field data-invalid={!!errors.password}>
-              <FieldLabel htmlFor="password">Senha</FieldLabel>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  aria-invalid={!!errors.password}
-                  disabled={isLoading}
-                  className="pr-9"
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  tabIndex={-1}
-                  className={cn(
-                    "absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
-                    isLoading && "pointer-events-none opacity-60",
-                  )}>
-                  {showPassword ? (
-                    <EyeOff className="size-4" />
-                  ) : (
-                    <Eye className="size-4" />
-                  )}
-                </button>
-              </div>
-              <FieldError
-                errors={errors.password ? [errors.password] : undefined}
-              />
-            </Field>
+            <Controller
+              name="password"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="password">Senha</FieldLabel>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      aria-invalid={fieldState.invalid}
+                      disabled={isLoading}
+                      className="pr-9"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      aria-label={
+                        showPassword ? "Ocultar senha" : "Mostrar senha"
+                      }
+                      tabIndex={-1}
+                      className={cn(
+                        "absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
+                        isLoading && "pointer-events-none opacity-60",
+                      )}>
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  <FieldError
+                    errors={
+                      fieldState.error ? [fieldState.error] : undefined
+                    }
+                  />
+                </Field>
+              )}
+            />
 
             <Button
               type="submit"
