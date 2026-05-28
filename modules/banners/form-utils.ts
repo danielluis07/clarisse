@@ -1,7 +1,4 @@
-import type {
-  BannerFormInput,
-  BannerFormOutput,
-} from "@/modules/banners/form-schema";
+import type { BannerFormInput } from "@/modules/banners/form-schema";
 import type { BannerOutput } from "@/modules/banners/types";
 import type {
   BannerImageValue,
@@ -11,25 +8,6 @@ import type {
 type BannerMediaAsset = NonNullable<BannerOutput["image"]>;
 
 export const bannerBackHref = "/admin/banners";
-
-export const bannerPlacementLabels: Record<
-  BannerFormOutput["placement"],
-  string
-> = {
-  home_hero: "Hero da home",
-  home_featured: "Destaque da home",
-  collection_page: "Página de coleção",
-  category_page: "Página de categoria",
-  product_page: "Página de produto",
-  promotional: "Promocional",
-  editorial: "Editorial",
-};
-
-export const bannerStatusLabels: Record<BannerFormOutput["status"], string> = {
-  draft: "Rascunho",
-  active: "Ativo",
-  archived: "Arquivado",
-};
 
 const toSelectionItem = (
   asset: BannerMediaAsset | null | undefined,
@@ -73,6 +51,9 @@ export const getBannerFormErrorMessage = (error: unknown) =>
 
 export const getBannerDeleteErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Não foi possível excluir o banner.";
+
+export const getDeleteErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Não foi possível excluir banners.";
 
 export const withBannerUploadAltText = (
   item: MediaSelectionItem | null,

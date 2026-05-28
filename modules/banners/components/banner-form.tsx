@@ -50,14 +50,16 @@ import {
 } from "@/modules/banners/form-schema";
 import {
   bannerBackHref,
-  bannerPlacementLabels,
-  bannerStatusLabels,
   getBannerDeleteErrorMessage,
   getBannerFormDefaultValues,
   getBannerFormErrorMessage,
   getBannerImageValue,
   withBannerUploadAltText,
 } from "@/modules/banners/form-utils";
+import {
+  bannerPlacementLabels,
+  bannerStatusLabels,
+} from "@/modules/banners/constants";
 import {
   bannerPlacementSchema,
   contentStatusSchema,
