@@ -1,10 +1,20 @@
 "use client";
 
+import { FocalPointPicker } from "@/components/media/focal-point-picker";
 import { MediaUploader } from "@/components/media/media-uploader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { BannerImageValue } from "@/modules/media/types";
+import { DEFAULT_FOCAL_POINT } from "@/modules/banners/hero-layout";
+import type {
+  BannerImageValue,
+  MediaSelectionItem,
+} from "@/modules/media/types";
 import { useId } from "react";
+
+const selectionPreviewUrl = (item: MediaSelectionItem | null) => {
+  if (!item) return null;
+  return item.kind === "existing" ? item.url : item.previewUrl;
+};
 
 export const BannerImageField = ({
   value,
@@ -12,6 +22,7 @@ export const BannerImageField = ({
   onAssetRemoved,
   showCta = true,
   showAltText = true,
+  showFocalPicker = false,
   disabled,
   className,
 }: {
@@ -21,6 +32,8 @@ export const BannerImageField = ({
   onAssetRemoved?: (assetId: string) => void;
   showCta?: boolean;
   showAltText?: boolean;
+  /** Show the focal point picker for each slot (used for cropping placements). */
+  showFocalPicker?: boolean;
   disabled?: boolean;
   className?: string;
 }) => {
@@ -32,33 +45,78 @@ export const BannerImageField = ({
     onChange({ ...value, ...patch });
   };
 
+  const desktopUrl = selectionPreviewUrl(value.desktop);
+  const mobileUrl = selectionPreviewUrl(value.mobile);
+
   return (
     <div className={className}>
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label className="text-sm">Imagem desktop</Label>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Home hero: recomendo 2400x1320 (proporção 20:11), mínimo 1800x990. A
+            imagem é recortada nessa proporção — mantenha a área inferior
+            esquerda livre para texto e CTA e ajuste o ponto focal abaixo.
+          </p>
           <MediaUploader
             value={value.desktop ? [value.desktop] : []}
-            onChange={(items) => emit({ desktop: items[0] ?? null })}
+            onChange={(items) => {
+              const next = items[0] ?? null;
+              emit(
+                next
+                  ? { desktop: next }
+                  : { desktop: null, desktopFocal: { ...DEFAULT_FOCAL_POINT } },
+              );
+            }}
             onAssetRemoved={onAssetRemoved}
             multiple={false}
             disabled={disabled}
             emptyTitle="Imagem desktop"
-            emptyDescription="Use uma imagem horizontal de alta resolução (recomendado 1920x720)."
+            emptyDescription="Imagem horizontal em proporção editorial ampla."
           />
+          {showFocalPicker && desktopUrl && (
+            <FocalPointPicker
+              imageUrl={desktopUrl}
+              alt="Imagem desktop do hero"
+              value={value.desktopFocal}
+              onChange={(desktopFocal) => emit({ desktopFocal })}
+              disabled={disabled}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
           <Label className="text-sm">Imagem mobile</Label>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Home hero mobile: recomendo 1080x1920 (proporção 9:16). Envie um
+            corte vertical dedicado, não a mesma imagem desktop, e ajuste o ponto
+            focal abaixo.
+          </p>
           <MediaUploader
             value={value.mobile ? [value.mobile] : []}
-            onChange={(items) => emit({ mobile: items[0] ?? null })}
+            onChange={(items) => {
+              const next = items[0] ?? null;
+              emit(
+                next
+                  ? { mobile: next }
+                  : { mobile: null, mobileFocal: { ...DEFAULT_FOCAL_POINT } },
+              );
+            }}
             onAssetRemoved={onAssetRemoved}
             multiple={false}
             disabled={disabled}
             emptyTitle="Imagem mobile"
-            emptyDescription="Use uma imagem vertical para celular (recomendado 750x1000)."
+            emptyDescription="Imagem vertical em proporção de tela cheia."
           />
+          {showFocalPicker && mobileUrl && (
+            <FocalPointPicker
+              imageUrl={mobileUrl}
+              alt="Imagem mobile do hero"
+              value={value.mobileFocal}
+              onChange={(mobileFocal) => emit({ mobileFocal })}
+              disabled={disabled}
+            />
+          )}
         </div>
       </div>
 

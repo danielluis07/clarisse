@@ -44,10 +44,6 @@ export const bannerFormSchema = z.object({
   ctaUrl: optionalCtaUrlField,
   placement: bannerPlacementSchema,
   status: contentStatusSchema,
-  displayOrder: z
-    .number()
-    .int("Ordem de exibição deve ser um número inteiro")
-    .min(0, "Ordem de exibição não pode ser negativa"),
 });
 
 export type BannerFormInput = z.input<typeof bannerFormSchema>;

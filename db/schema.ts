@@ -241,15 +241,20 @@ export const banners = pgTable(
     ctaUrl: text("cta_url"),
     placement: bannerPlacementEnum("placement").notNull(),
     status: contentStatusEnum("status").notNull().default("draft"),
-    displayOrder: integer("display_order").notNull().default(0),
+    // Focal point (percent, 0–100) used as `object-position` when the image is
+    // cropped to fit the hero box. Desktop and mobile crops differ, so each
+    // image slot keeps its own anchor.
+    focalX: integer("focal_x").notNull().default(50),
+    focalY: integer("focal_y").notNull().default(50),
+    mobileFocalX: integer("mobile_focal_x").notNull().default(50),
+    mobileFocalY: integer("mobile_focal_y").notNull().default(50),
     ...timestamps(),
   },
   (table) => [
     index("banners_placement_status_idx").on(table.placement, table.status),
-    index("banners_display_order_idx").on(table.displayOrder),
     check(
-      "banners_display_order_non_negative",
-      sql`${table.displayOrder} >= 0`,
+      "banners_focal_within_bounds",
+      sql`${table.focalX} between 0 and 100 and ${table.focalY} between 0 and 100 and ${table.mobileFocalX} between 0 and 100 and ${table.mobileFocalY} between 0 and 100`,
     ),
   ],
 );

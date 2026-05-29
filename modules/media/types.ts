@@ -66,9 +66,16 @@ export type ProductImageColorOption = {
   colorHex: string | null;
 };
 
+/** Focal point (percent, 0–100) used as `object-position` when cropped. */
+export type FocalPoint = { x: number; y: number };
+
 export type BannerImageValue = {
   desktop: MediaSelectionItem | null;
   mobile: MediaSelectionItem | null;
+  /** Where the desktop image anchors when the hero crops it. */
+  desktopFocal: FocalPoint;
+  /** Where the mobile image anchors when the hero crops it. */
+  mobileFocal: FocalPoint;
   altText: string | null;
   ctaUrl: string | null;
 };

@@ -1,3 +1,4 @@
+import { toFocalPoint } from "@/modules/banners/hero-layout";
 import type { BannerFormInput } from "@/modules/banners/form-schema";
 import type { BannerOutput } from "@/modules/banners/types";
 import type {
@@ -34,7 +35,6 @@ export const getBannerFormDefaultValues = (
   ctaUrl: banner?.ctaUrl ?? "",
   placement: banner?.placement ?? "home_hero",
   status: banner?.status ?? "draft",
-  displayOrder: banner?.displayOrder ?? 0,
 });
 
 export const getBannerImageValue = (
@@ -42,6 +42,8 @@ export const getBannerImageValue = (
 ): BannerImageValue => ({
   desktop: toSelectionItem(banner?.image),
   mobile: toSelectionItem(banner?.mobileImage),
+  desktopFocal: toFocalPoint(banner?.focalX, banner?.focalY),
+  mobileFocal: toFocalPoint(banner?.mobileFocalX, banner?.mobileFocalY),
   altText: banner?.image?.altText ?? banner?.mobileImage?.altText ?? null,
   ctaUrl: banner?.ctaUrl ?? null,
 });

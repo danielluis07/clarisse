@@ -33,6 +33,7 @@ import {
 import { useCommitMedia, useDeleteMedia } from "@/modules/media/hooks";
 import type {
   BannerImageValue,
+  FocalPoint,
   MediaSelectionItem,
 } from "@/modules/media/types";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -40,6 +41,8 @@ import { useConfirm } from "@/providers/confirm-provider";
 type ResolvedBannerImages = {
   imageId: string | null;
   mobileImageId: string | null;
+  desktopFocal: FocalPoint;
+  mobileFocal: FocalPoint;
   uploadedAssetIds: string[];
 };
 
@@ -54,11 +57,7 @@ const CreateBannerForm = () => {
 
   const handleSubmit = async (
     values: BannerFormOutput,
-    images: {
-      imageId: string | null;
-      mobileImageId: string | null;
-      uploadedAssetIds: string[];
-    },
+    images: ResolvedBannerImages,
   ): Promise<BannerOutput | null> => {
     let createdBanner: BannerOutput | null = null;
 
@@ -67,6 +66,10 @@ const CreateBannerForm = () => {
         ...values,
         imageId: images.imageId,
         mobileImageId: images.mobileImageId,
+        focalX: images.desktopFocal.x,
+        focalY: images.desktopFocal.y,
+        mobileFocalX: images.mobileFocal.x,
+        mobileFocalY: images.mobileFocal.y,
       });
       toast.success("Banner criado com sucesso.");
       return createdBanner;
@@ -114,6 +117,10 @@ const UpdateBannerForm = ({ id }: { id: string }) => {
         ...values,
         imageId: images.imageId,
         mobileImageId: images.mobileImageId,
+        focalX: images.desktopFocal.x,
+        focalY: images.desktopFocal.y,
+        mobileFocalX: images.mobileFocal.x,
+        mobileFocalY: images.mobileFocal.y,
       });
       toast.success("Banner atualizado com sucesso.");
       return updatedBanner;
@@ -209,6 +216,8 @@ const BannerFormBody = ({
       mobileImageId: mobile
         ? (committedByLocalId.get(mobile.localId)?.assetId ?? null)
         : null,
+      desktopFocal: imageValue.desktopFocal,
+      mobileFocal: imageValue.mobileFocal,
       uploadedAssetIds: committed
         .filter((item) => pendingLocalIds.has(item.localId))
         .map((item) => item.assetId),

@@ -2,7 +2,7 @@
 
 import { Save } from "lucide-react";
 import Link from "next/link";
-import { Controller, type Control } from "react-hook-form";
+import { Controller, type Control, useWatch } from "react-hook-form";
 
 import { BannerImageField } from "@/components/media/banner-image-field";
 import { Button } from "@/components/ui/button";
@@ -42,10 +42,19 @@ import {
 } from "@/modules/banners/form-schema";
 import { bannerBackHref } from "@/modules/banners/form-utils";
 import {
+  focalToPosition,
+  HERO_DESKTOP_ASPECT_CLASS,
+  HERO_MOBILE_ASPECT_CLASS,
+} from "@/modules/banners/hero-layout";
+import {
   bannerPlacementSchema,
   contentStatusSchema,
 } from "@/modules/banners/validations";
-import type { BannerImageValue } from "@/modules/media/types";
+import type {
+  BannerImageValue,
+  FocalPoint,
+  MediaSelectionItem,
+} from "@/modules/media/types";
 
 export const BannerFormGrid = ({
   control,
@@ -64,9 +73,11 @@ export const BannerFormGrid = ({
   isSaving: boolean;
   submitLabel: string;
 }) => {
+  const previewValues = useWatch({ control });
   const hasPendingImage =
     imageValue.desktop?.kind === "pending" ||
     imageValue.mobile?.kind === "pending";
+  const showHeroPreview = previewValues.placement === "home_hero";
 
   return (
     <div className="grid max-w-6xl gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -81,19 +92,23 @@ export const BannerFormGrid = ({
           <CardContent>
             <FieldGroup>
               <Field>
-                <FieldLabel>Imagens</FieldLabel>
                 <BannerImageField
                   value={imageValue}
                   onChange={onImageValueChange}
                   onAssetRemoved={onAssetRemoved}
                   showCta={false}
                   showAltText={hasPendingImage}
+                  showFocalPicker={showHeroPreview}
                   disabled={isSubmitting}
                 />
               </Field>
             </FieldGroup>
           </CardContent>
         </Card>
+
+        {showHeroPreview && (
+          <HeroBannerPreview values={previewValues} imageValue={imageValue} />
+        )}
 
         <Card>
           <CardHeader className="border-b">
@@ -304,40 +319,6 @@ export const BannerFormGrid = ({
                 </Field>
               )}
             />
-
-            <Controller
-              name="displayOrder"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="displayOrder">Ordem</FieldLabel>
-                  <Input
-                    id="displayOrder"
-                    type="number"
-                    min={0}
-                    step={1}
-                    inputMode="numeric"
-                    name={field.name}
-                    ref={field.ref}
-                    value={Number.isFinite(field.value) ? field.value : ""}
-                    onBlur={field.onBlur}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      field.onChange(
-                        value === ""
-                          ? Number.NaN
-                          : Number.parseInt(value, 10),
-                      );
-                    }}
-                    aria-invalid={fieldState.invalid}
-                    disabled={isSubmitting}
-                  />
-                  <FieldError
-                    errors={fieldState.error ? [fieldState.error] : undefined}
-                  />
-                </Field>
-              )}
-            />
           </FieldGroup>
         </CardContent>
         <CardFooter className="flex-col items-stretch gap-2">
@@ -356,4 +337,162 @@ export const BannerFormGrid = ({
       </Card>
     </div>
   );
+};
+
+type HeroPreviewValues = Partial<
+  Pick<
+    BannerFormInput,
+    "title" | "subtitle" | "description" | "ctaLabel" | "ctaUrl"
+  >
+>;
+
+const HeroBannerPreview = ({
+  values,
+  imageValue,
+}: {
+  values: HeroPreviewValues;
+  imageValue: BannerImageValue;
+}) => {
+  const title = getPreviewText(values.title, "Título do hero");
+  const subtitle = getPreviewText(values.subtitle, "Subtítulo editorial");
+  const description = getPreviewText(
+    values.description,
+    "Descrição curta exibida sobre a imagem do hero.",
+  );
+  const ctaLabel = getPreviewText(values.ctaLabel, "CTA principal");
+  const desktopUrl = getSelectionPreviewUrl(imageValue.desktop);
+  const mobileUrl = getSelectionPreviewUrl(imageValue.mobile) ?? desktopUrl;
+
+  return (
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle className="font-admin">Prévia do hero</CardTitle>
+        <CardDescription>
+          Visualização aproximada do corte desktop e mobile da home.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px]">
+          <HeroPreviewFrame
+            label="Desktop"
+            imageUrl={desktopUrl}
+            focal={imageValue.desktopFocal}
+            title={title}
+            subtitle={subtitle}
+            description={description}
+            ctaLabel={ctaLabel}
+            variant="desktop"
+          />
+          <HeroPreviewFrame
+            label="Mobile"
+            imageUrl={mobileUrl}
+            focal={imageValue.mobileFocal}
+            title={title}
+            subtitle={subtitle}
+            description={description}
+            ctaLabel={ctaLabel}
+            variant="mobile"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const HeroPreviewFrame = ({
+  label,
+  imageUrl,
+  focal,
+  title,
+  subtitle,
+  description,
+  ctaLabel,
+  variant,
+}: {
+  label: string;
+  imageUrl: string | null;
+  focal: FocalPoint;
+  title: string;
+  subtitle: string;
+  description: string;
+  ctaLabel: string;
+  variant: "desktop" | "mobile";
+}) => (
+  <div className="flex flex-col gap-2">
+    <div className="text-[10px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+      {label}
+    </div>
+    <div
+      className={
+        variant === "desktop"
+          ? `relative ${HERO_DESKTOP_ASPECT_CLASS} overflow-hidden rounded-md border bg-neutral-950`
+          : `relative ${HERO_MOBILE_ASPECT_CLASS} overflow-hidden rounded-md border bg-neutral-950`
+      }>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover"
+        style={
+          imageUrl
+            ? {
+                backgroundImage: `url("${imageUrl}")`,
+                backgroundPosition: focalToPosition(focal),
+              }
+            : undefined
+        }
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-black/5"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-linear-to-r from-black/40 to-transparent"
+      />
+      <div
+        className={
+          variant === "desktop"
+            ? "absolute inset-x-0 bottom-0 p-5 text-white"
+            : "absolute inset-x-0 bottom-0 p-4 text-white"
+        }>
+        <p className="text-[8px] uppercase tracking-[0.28em] text-white/75">
+          {subtitle}
+        </p>
+        <h3
+          className={
+            variant === "desktop"
+              ? "mt-2 font-heading text-3xl font-light leading-none tracking-tight"
+              : "mt-2 font-heading text-2xl font-light leading-none tracking-tight"
+          }>
+          {title}
+        </h3>
+        <p
+          className={
+            variant === "desktop"
+              ? "mt-3 max-w-sm text-xs leading-relaxed text-white/75"
+              : "mt-3 text-[11px] leading-relaxed text-white/75"
+          }>
+          {description}
+        </p>
+        <div
+          className={
+            variant === "desktop"
+              ? "mt-4 inline-flex bg-white px-4 py-2 text-[8px] font-medium uppercase tracking-[0.2em] text-black"
+              : "mt-4 inline-flex bg-white px-3 py-2 text-[7px] font-medium uppercase tracking-[0.18em] text-black"
+          }>
+          {ctaLabel}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const getSelectionPreviewUrl = (item: MediaSelectionItem | null) => {
+  if (!item) return null;
+  return item.kind === "existing" ? item.url : item.previewUrl;
+};
+
+const getPreviewText = (value: unknown, fallback: string) => {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  return trimmed || fallback;
 };

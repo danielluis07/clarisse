@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   images: {
+    // Default is [75]. The home hero requests 78 (mobile) and 82 (desktop)
+    // via getImageProps, so they must be allowlisted in Next 16.
+    qualities: [75, 78, 82],
     remotePatterns: [
       {
         protocol: "https",

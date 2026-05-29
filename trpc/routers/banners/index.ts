@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { revalidatePath } from "next/cache";
 import {
   and,
   asc,
@@ -37,6 +38,10 @@ import {
 } from "@/modules/banners/validations";
 import { getUnusedMediaAssetIds } from "@/modules/media/server-utils";
 import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
+
+const revalidateStorefrontBanners = () => {
+  revalidatePath("/");
+};
 
 export const bannersRouter = createTRPCRouter({
   list: adminProcedure.input(listBannersInput).query(async ({ input }) => {
@@ -82,7 +87,6 @@ export const bannersRouter = createTRPCRouter({
       title: banners.title,
       placement: banners.placement,
       status: banners.status,
-      displayOrder: banners.displayOrder,
     }[sortBy];
     const orderBy =
       sortOrder === "asc"
@@ -124,11 +128,13 @@ export const bannersRouter = createTRPCRouter({
         conditions.push(eq(banners.placement, input.placement));
       }
 
-      const rows = await db
+      const query = db
         .select(bannerSelect)
         .from(banners)
         .where(and(...conditions))
-        .orderBy(asc(banners.displayOrder), asc(banners.id));
+        .orderBy(desc(banners.updatedAt), desc(banners.id));
+
+      const rows = input.limit ? await query.limit(input.limit) : await query;
 
       return withBannerImages(rows);
     }),
@@ -169,7 +175,10 @@ export const bannersRouter = createTRPCRouter({
             ctaUrl: input.ctaUrl ?? null,
             placement: input.placement,
             status: input.status,
-            displayOrder: input.displayOrder,
+            focalX: input.focalX,
+            focalY: input.focalY,
+            mobileFocalX: input.mobileFocalX,
+            mobileFocalY: input.mobileFocalY,
           })
           .returning(bannerSelect);
 
@@ -181,6 +190,8 @@ export const bannersRouter = createTRPCRouter({
         }
 
         const [data] = await withBannerImages([row]);
+        revalidateStorefrontBanners();
+
         return data;
       } catch (error) {
         return rethrowBannerWriteError(error, "Erro ao criar banner");
@@ -226,8 +237,13 @@ export const bannersRouter = createTRPCRouter({
           ? { placement: values.placement }
           : {}),
         ...(values.status !== undefined ? { status: values.status } : {}),
-        ...(values.displayOrder !== undefined
-          ? { displayOrder: values.displayOrder }
+        ...(values.focalX !== undefined ? { focalX: values.focalX } : {}),
+        ...(values.focalY !== undefined ? { focalY: values.focalY } : {}),
+        ...(values.mobileFocalX !== undefined
+          ? { mobileFocalX: values.mobileFocalX }
+          : {}),
+        ...(values.mobileFocalY !== undefined
+          ? { mobileFocalY: values.mobileFocalY }
           : {}),
       };
 
@@ -251,6 +267,8 @@ export const bannersRouter = createTRPCRouter({
         }
 
         const [data] = await withBannerImages([row]);
+        revalidateStorefrontBanners();
+
         return data;
       } catch (error) {
         return rethrowBannerWriteError(error, "Erro ao atualizar banner");
@@ -283,6 +301,7 @@ export const bannersRouter = createTRPCRouter({
       });
 
       await purgeMediaAssetsFromS3(deletedMediaRows);
+      revalidateStorefrontBanners();
 
       return row;
     }),
@@ -313,6 +332,7 @@ export const bannersRouter = createTRPCRouter({
       });
 
       await purgeMediaAssetsFromS3(deletedMediaRows);
+      revalidateStorefrontBanners();
 
       return rows;
     }),

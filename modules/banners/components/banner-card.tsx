@@ -96,7 +96,6 @@ export const BannerCard = ({
           <Badge variant="outline">
             {bannerPlacementLabels[banner.placement]}
           </Badge>
-          <Badge variant="secondary">Ordem {banner.displayOrder}</Badge>
         </div>
 
         <div className="flex min-h-16 flex-col gap-1">

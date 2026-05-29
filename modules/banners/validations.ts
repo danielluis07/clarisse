@@ -24,7 +24,6 @@ export const bannerSortBySchema = z.enum([
   "title",
   "placement",
   "status",
-  "displayOrder",
 ]);
 export const bannerSortOrderSchema = z.enum(["asc", "desc"]);
 
@@ -50,6 +49,15 @@ const optionalCtaUrl = z
   .transform((value) => value || null)
   .nullable()
   .optional();
+
+// Focal point coordinate (percent) used as `object-position` when the hero
+// image is cropped. Defaults to center.
+const focalCoord = z
+  .number()
+  .int("Ponto focal deve ser um número inteiro")
+  .min(0, "Ponto focal deve estar entre 0 e 100")
+  .max(100, "Ponto focal deve estar entre 0 e 100")
+  .default(50);
 
 const bannerBaseInput = z
   .object({
@@ -78,11 +86,10 @@ const bannerBaseInput = z
     ctaUrl: optionalCtaUrl,
     placement: bannerPlacementSchema,
     status: contentStatusSchema.default("draft"),
-    displayOrder: z
-      .number()
-      .int("Ordem de exibição deve ser um número inteiro")
-      .min(0, "Ordem de exibição não pode ser negativa")
-      .default(0),
+    focalX: focalCoord,
+    focalY: focalCoord,
+    mobileFocalX: focalCoord,
+    mobileFocalY: focalCoord,
   });
 
 export const listBannersInput = z
@@ -90,8 +97,8 @@ export const listBannersInput = z
     page: z.number().min(1).default(1),
     perPage: z.number().min(1).max(100).default(PAGINATION.DEFAULT_PER_PAGE),
     search: z.string().trim().optional(),
-    sortBy: bannerSortBySchema.default("displayOrder"),
-    sortOrder: bannerSortOrderSchema.default("asc"),
+    sortBy: bannerSortBySchema.default("updatedAt"),
+    sortOrder: bannerSortOrderSchema.default("desc"),
     placement: bannerPlacementSchema.optional(),
     status: contentStatusSchema.optional(),
     createdAtFrom: isoDate.optional(),
@@ -108,6 +115,7 @@ export const listBannersInput = z
 
 export const listStoreBannersInput = z.object({
   placement: bannerPlacementSchema.optional(),
+  limit: z.number().int().min(1).max(24).optional(),
 });
 
 export const getBannerInput = z.object({
@@ -144,11 +152,10 @@ export const bannerUpdateFields = z
     ctaUrl: optionalCtaUrl,
     placement: bannerPlacementSchema.optional(),
     status: contentStatusSchema.optional(),
-    displayOrder: z
-      .number()
-      .int("Ordem de exibição deve ser um número inteiro")
-      .min(0, "Ordem de exibição não pode ser negativa")
-      .optional(),
+    focalX: focalCoord.optional(),
+    focalY: focalCoord.optional(),
+    mobileFocalX: focalCoord.optional(),
+    mobileFocalY: focalCoord.optional(),
   });
 
 export const updateBannerInput = bannerUpdateFields.extend({
