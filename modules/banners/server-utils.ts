@@ -18,7 +18,10 @@ export const bannerSelect = {
   ctaUrl: banners.ctaUrl,
   placement: banners.placement,
   status: banners.status,
-  displayOrder: banners.displayOrder,
+  focalX: banners.focalX,
+  focalY: banners.focalY,
+  mobileFocalX: banners.mobileFocalX,
+  mobileFocalY: banners.mobileFocalY,
   createdAt: banners.createdAt,
   updatedAt: banners.updatedAt,
 } as const;

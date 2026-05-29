@@ -22,31 +22,25 @@ import {
 type SortPreset = {
   value: string;
   label: string;
-  sortBy: "createdAt" | "updatedAt" | "title" | "placement" | "status" | "displayOrder";
+  sortBy: "createdAt" | "updatedAt" | "title" | "placement" | "status";
   sortOrder: "asc" | "desc";
 };
 
-const DEFAULT_SORT_BY = "displayOrder";
-const DEFAULT_SORT_ORDER = "asc";
+const DEFAULT_SORT_BY = "updatedAt";
+const DEFAULT_SORT_ORDER = "desc";
 const DEFAULT_SORT = `${DEFAULT_SORT_BY}:${DEFAULT_SORT_ORDER}`;
 
 const SORT_PRESETS: SortPreset[] = [
   {
-    value: "displayOrder:asc",
-    label: "Ordem da vitrine",
-    sortBy: "displayOrder",
-    sortOrder: "asc",
+    value: "updatedAt:desc",
+    label: "Atualizados recentemente",
+    sortBy: "updatedAt",
+    sortOrder: "desc",
   },
   {
     value: "createdAt:desc",
     label: "Mais recentes",
     sortBy: "createdAt",
-    sortOrder: "desc",
-  },
-  {
-    value: "updatedAt:desc",
-    label: "Atualizados recentemente",
-    sortBy: "updatedAt",
     sortOrder: "desc",
   },
   { value: "title:asc", label: "Título (A-Z)", sortBy: "title", sortOrder: "asc" },
