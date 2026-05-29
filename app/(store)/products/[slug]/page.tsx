@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { ProductPageView } from "@/components/store/product/product-page-view";
-import { StoreRelatedProducts } from "@/components/store/product/store-related-products";
+import { RelatedProducts } from "@/components/store/related-products";
 import {
   prefetchStoreProduct,
   prefetchStoreRelatedProducts,
@@ -26,16 +26,8 @@ const ProductDetailsPage = async ({
         </Suspense>
 
         <ErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            <StoreRelatedProducts
-              slug={slug}
-              index="02"
-              eyebrow="Você também pode gostar"
-              title="Complete o look"
-              description="Outras peças do nosso edit que conversam com a estética desta seleção."
-              ctaLabel="Ver toda a coleção"
-              ctaHref="/colecoes"
-            />
+          <Suspense fallback={<RelatedProductsSkeleton />}>
+            <RelatedProducts slug={slug} />
           </Suspense>
         </ErrorBoundary>
       </ErrorBoundary>
@@ -54,6 +46,23 @@ const ProductExperienceSkeleton = () => (
       <div className="h-8 w-1/3 animate-pulse bg-foreground/10" />
       <div className="h-12 w-full animate-pulse bg-foreground/10" />
       <div className="h-12 w-full animate-pulse bg-foreground/10" />
+    </div>
+  </section>
+);
+
+const RelatedProductsSkeleton = () => (
+  <section className="border-t border-foreground/10">
+    <div className="mx-auto max-w-screen-2xl px-6 py-16 md:px-10 md:py-24">
+      <div className="h-9 w-72 max-w-full animate-pulse bg-foreground/10" />
+      <div className="mt-10 grid grid-cols-2 gap-x-3 gap-y-12 md:mt-14 md:gap-x-6 lg:grid-cols-4 lg:gap-x-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-4">
+            <div className="aspect-3/4 w-full animate-pulse bg-foreground/5" />
+            <div className="h-3 w-2/3 animate-pulse bg-foreground/10" />
+            <div className="h-3 w-1/3 animate-pulse bg-foreground/10" />
+          </div>
+        ))}
+      </div>
     </div>
   </section>
 );

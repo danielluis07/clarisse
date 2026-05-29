@@ -1,75 +1,35 @@
-import Link from "next/link";
-import { ProductCard } from "./product-card";
+"use client";
 
-export type RelatedProductCard = {
-  href: string;
-  name: string;
-  category?: string;
-  price: string;
-  comparePrice?: string;
-  image: string;
-  hoverImage?: string;
-  badge?: string;
-};
+import { ProductCard } from "@/components/store/product-card";
+import { useStoreRelatedProductsSuspense } from "@/modules/products/hooks";
+import { buildRelatedProductCard } from "@/modules/products/store-utils";
 
-type RelatedProductsProps = {
-  eyebrow?: string;
-  title: string;
-  description?: string;
-  ctaLabel?: string;
-  ctaHref?: string;
-  products: RelatedProductCard[];
-  index?: string;
-};
+export const RelatedProducts = ({ slug }: { slug: string }) => {
+  const { data } = useStoreRelatedProductsSuspense({ slug, limit: 4 });
 
-export const RelatedProducts = ({
-  eyebrow = "Complete o look",
-  title,
-  description,
-  ctaLabel,
-  ctaHref,
-  products,
-  index,
-}: RelatedProductsProps) => {
-  if (products.length === 0) return null;
+  const cards = data
+    .map(buildRelatedProductCard)
+    .filter((card): card is NonNullable<typeof card> => card !== null);
+
+  if (cards.length === 0) return null;
 
   return (
-    <section className="border-t border-foreground/10 bg-background py-24 md:py-32">
-      <div className="mx-auto max-w-screen-2xl px-6 md:px-10">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div className="flex items-baseline gap-5">
-            {index && (
-              <span className="hidden font-heading text-2xl italic text-foreground/40 md:inline">
-                {index}
-              </span>
-            )}
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.3em] text-foreground/55">
-                {eyebrow}
-              </p>
-              <h2 className="mt-4 font-heading text-3xl font-light leading-[1.05] tracking-tight md:text-4xl lg:text-5xl">
-                {title}
-              </h2>
-              {description && (
-                <p className="mt-5 max-w-xl text-sm leading-relaxed text-foreground/70 md:text-base">
-                  {description}
-                </p>
-              )}
-            </div>
+    <section className="border-t border-foreground/10 bg-background">
+      <div className="mx-auto max-w-screen-2xl px-6 py-16 md:px-10 md:py-24">
+        <div className="flex items-end justify-between gap-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/55">
+              Complete o look
+            </p>
+            <h2 className="mt-3 font-heading text-3xl font-light leading-tight md:text-4xl">
+              Você também pode gostar
+            </h2>
           </div>
-          {ctaLabel && ctaHref && (
-            <Link
-              href={ctaHref}
-              className="text-[11px] uppercase tracking-[0.22em] text-foreground/70 underline-offset-8 transition-colors hover:text-foreground hover:underline"
-            >
-              {ctaLabel}
-            </Link>
-          )}
         </div>
 
-        <div className="mt-16 grid grid-cols-2 gap-x-3 gap-y-12 md:gap-x-6 md:gap-y-16 lg:grid-cols-4 lg:gap-x-8">
-          {products.map((p) => (
-            <ProductCard key={p.href} {...p} />
+        <div className="mt-10 grid grid-cols-2 gap-x-3 gap-y-12 md:mt-14 md:gap-x-6 lg:grid-cols-4 lg:gap-x-8">
+          {cards.map((card) => (
+            <ProductCard key={card.href} {...card} />
           ))}
         </div>
       </div>
