@@ -1,24 +1,20 @@
 import { Hero } from "@/components/store/home/hero";
-import { NewArrivals } from "@/components/store/home/new-arrivals";
-import { CategoryEdit } from "@/components/store/home/category-edit";
-import { EditorialSplit } from "@/components/store/home/editorial-split";
-import { Lookbook } from "@/components/store/home/lookbook";
-import { FeaturedCollections } from "@/components/store/home/featured-collections";
-import { WardrobeEssentials } from "@/components/store/home/wardrobe-essentials";
+import { CategoryGrid } from "@/components/store/home/category-grid";
+import { FeaturedCollection } from "@/components/store/home/featured-collection";
+import { FeaturedProducts } from "@/components/store/home/featured-products";
 import { EditorialBanner } from "@/components/store/home/editorial-banner";
+import { ServiceHighlights } from "@/components/store/home/service-highlights";
 import { Newsletter } from "@/components/store/home/newsletter";
 
 export default function StoreHome() {
   return (
     <>
       <Hero />
-      <NewArrivals />
-      <CategoryEdit />
-      <EditorialSplit />
-      <Lookbook />
-      <FeaturedCollections />
-      <WardrobeEssentials />
+      <FeaturedProducts />
+      <CategoryGrid />
+      <FeaturedCollection />
       <EditorialBanner />
+      <ServiceHighlights />
       <Newsletter />
     </>
   );
