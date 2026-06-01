@@ -1,6 +1,7 @@
 import { db } from "@/db";
-import { categories } from "@/db/schema";
+import { categories, mediaAssets } from "@/db/schema";
 import { escapeLikeWildcards } from "@/lib/db-utils";
+import { revalidatePath } from "next/cache";
 import {
   deleteMediaAssetRows,
   purgeMediaAssetsFromS3,
@@ -11,10 +12,11 @@ import {
   deleteCategoryInput,
   getCategoryInput,
   listCategoriesInput,
+  listStoreCategoriesInput,
   updateCategoryInput,
 } from "@/modules/categories/validations";
 import { getUniqueCategorySlug } from "@/modules/categories/server-utils";
-import { adminProcedure, createTRPCRouter } from "@/trpc/init";
+import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import {
   and,
@@ -42,6 +44,10 @@ const categorySelect = {
   seoDescription: categories.seoDescription,
   createdAt: categories.createdAt,
   updatedAt: categories.updatedAt,
+};
+
+const revalidateStorefrontCategories = () => {
+  revalidatePath("/");
 };
 
 export const categoriesRouter = createTRPCRouter({
@@ -123,6 +129,56 @@ export const categoriesRouter = createTRPCRouter({
     };
   }),
 
+  listStoreCategories: baseProcedure
+    .input(listStoreCategoriesInput)
+    .query(async ({ input }) => {
+      const query = db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          description: categories.description,
+          imageId: categories.imageId,
+          displayOrder: categories.displayOrder,
+          imageAssetId: mediaAssets.id,
+          imageUrl: mediaAssets.url,
+          imageFilename: mediaAssets.filename,
+          imageAltText: mediaAssets.altText,
+          imageMimeType: mediaAssets.mimeType,
+          imageWidth: mediaAssets.width,
+          imageHeight: mediaAssets.height,
+        })
+        .from(categories)
+        .leftJoin(mediaAssets, eq(categories.imageId, mediaAssets.id))
+        .where(eq(categories.isActive, true))
+        .orderBy(
+          asc(categories.displayOrder),
+          asc(categories.name),
+          asc(categories.id),
+        );
+
+      const rows = input.limit ? await query.limit(input.limit) : await query;
+
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        description: row.description,
+        displayOrder: row.displayOrder,
+        image: row.imageAssetId
+          ? {
+              id: row.imageAssetId,
+              url: row.imageUrl,
+              filename: row.imageFilename,
+              altText: row.imageAltText,
+              mimeType: row.imageMimeType,
+              width: row.imageWidth,
+              height: row.imageHeight,
+            }
+          : null,
+      }));
+    }),
+
   get: adminProcedure.input(getCategoryInput).query(async ({ input }) => {
     const [data] = await db
       .select(categorySelect)
@@ -152,6 +208,8 @@ export const categoriesRouter = createTRPCRouter({
         })
         .returning(categorySelect);
 
+      revalidateStorefrontCategories();
+
       return data;
     }),
 
@@ -179,6 +237,8 @@ export const categoriesRouter = createTRPCRouter({
         });
       }
 
+      revalidateStorefrontCategories();
+
       return data;
     }),
 
@@ -202,10 +262,7 @@ export const categoriesRouter = createTRPCRouter({
           tx,
           data.imageId ? [data.imageId] : [],
         );
-        const deletedMediaRows = await deleteMediaAssetRows(
-          tx,
-          unusedMediaIds,
-        );
+        const deletedMediaRows = await deleteMediaAssetRows(tx, unusedMediaIds);
 
         return { data, deletedMediaRows };
       });
@@ -214,6 +271,8 @@ export const categoriesRouter = createTRPCRouter({
       // logged, never thrown, so this can never resurrect a successful delete
       // as a client-facing error.
       await purgeMediaAssetsFromS3(deletedMediaRows);
+
+      revalidateStorefrontCategories();
 
       return data;
     }),
@@ -262,6 +321,8 @@ export const categoriesRouter = createTRPCRouter({
         );
 
         await purgeMediaAssetsFromS3(deletedMediaRows);
+
+        revalidateStorefrontCategories();
 
         return deletedRows;
       } catch (error) {

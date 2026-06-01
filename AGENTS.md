@@ -16,7 +16,7 @@ This project is a fictional Brazilian women's editorial fashion e-commerce calle
 
 The goal is to build a modern, production-ready e-commerce platform inspired by Shopify-like experiences. The application includes a public storefront and an admin dashboard where the store owner can manage products, categories, collections, product variants, inventory, images, content sections, and store settings.
 
-The project uses a fullstack TypeScript stack with tools like Next.js, Drizzle ORM, Neon Database, tRPC, Zod, React Hook Form, Tailwind CSS, shadcn/ui, Better Auth, and AWS S3.
+The project uses a fullstack TypeScript stack with tools like Next.js, Drizzle ORM, Neon Database, tRPC, Zod, React Hook Form, Tailwind CSS, shadcn/ui, Better Auth, Date Fns and AWS S3.
 
 Clarisse should feel like a premium, minimal, editorial fashion brand. The storefront should focus on women's fashion products such as blazers, tailored pants, minimalist dresses, oversized shirts, sophisticated bags, skirts, and premium basics.
 

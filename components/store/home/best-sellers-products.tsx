@@ -2,24 +2,22 @@ import { ProductsRow } from "@/components/store/home/products-row";
 import { mapStoreProduct } from "@/lib/map-store-product";
 import { getStoreProducts } from "@/modules/products/storefront";
 
-export const FeaturedProducts = async () => {
+export const BestSellersProducts = async () => {
   const { data } = await getStoreProducts({
     perPage: 4,
-    isFeatured: true,
-    sortBy: "publishedAt",
-    sortOrder: "desc",
+    sortBy: "random",
   });
 
   if (!data.length) return null;
 
   return (
     <ProductsRow
-      subtitle="Seleção da estação"
-      title="Em destaque"
+      subtitle="Favoritos da Clarisse"
+      title="Mais vendidos"
       viewAllHref="/products"
       viewAllLabel="Ver todos os produtos"
       products={data.map((product, index) =>
-        mapStoreProduct(product, index, "Destaque"),
+        mapStoreProduct(product, index, "Mais vendido"),
       )}
     />
   );

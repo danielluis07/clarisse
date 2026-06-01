@@ -38,6 +38,7 @@ A curadoria da loja é baseada em uma estética minimalista e premium, com produ
 - Vestidos minimalistas
 - Camisas oversized
 - Bolsas sofisticadas
+- Casacos
 
 O posicionamento da marca é voltado para mulheres que buscam elegância, versatilidade e peças atemporais.
 

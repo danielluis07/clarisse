@@ -12,8 +12,7 @@ export type ProductOutput = RouterOutput["products"]["get"];
 export type StoreProductInput = RouterInput["products"]["getStoreProduct"];
 export type StoreProductOutput = RouterOutput["products"]["getStoreProduct"];
 export type StoreProductsInput = RouterInput["products"]["listStoreProducts"];
-export type StoreProductsOutput =
-  RouterOutput["products"]["listStoreProducts"];
+export type StoreProductsOutput = RouterOutput["products"]["listStoreProducts"];
 export type StoreProductListItem = StoreProductsOutput["data"][number];
 export type StoreRelatedProductsInput =
   RouterInput["products"]["getStoreRelatedProducts"];
@@ -40,6 +39,10 @@ export type InventoryInput = RouterInput["products"]["inventoryList"];
 export type InventoryOutput = RouterOutput["products"]["inventoryList"];
 export type InventoryListItem = InventoryOutput["data"][number];
 export type AdjustInventoryInput = RouterInput["products"]["adjustInventory"];
+
+export type StoreProduct = StoreProductsOutput["data"][number];
+export type StoreProductImage = NonNullable<StoreProduct["primaryImage"]>;
+export type StoreProductColor = StoreProduct["colors"][number];
 
 // Internal types used in router operations
 export type ProductImagePayload = {

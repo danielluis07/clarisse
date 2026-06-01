@@ -19,6 +19,7 @@ export const storeProductSortBySchema = z.enum([
   "createdAt",
   "name",
   "basePriceCents",
+  "random",
 ]);
 
 export const inventoryStockStatusSchema = z.enum([
@@ -435,6 +436,7 @@ export const listStoreProductsInput = z.object({
   page: z.number().int().min(1).default(1),
   perPage: z.number().int().min(1).max(48).default(STORE_PRODUCTS_PER_PAGE),
   search: z.string().trim().max(120).optional(),
+  isFeatured: z.boolean().optional(),
   sortBy: storeProductSortBySchema.default("publishedAt"),
   sortOrder: productSortOrderSchema.default("desc"),
 });

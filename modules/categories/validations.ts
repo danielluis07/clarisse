@@ -55,6 +55,10 @@ export const listCategoriesInput = z
     },
   );
 
+export const listStoreCategoriesInput = z.object({
+  limit: z.number().int().min(1).max(24).optional(),
+});
+
 export const getCategoryInput = z.object({
   id: z.string().min(1, "ID da categoria é obrigatório"),
 });

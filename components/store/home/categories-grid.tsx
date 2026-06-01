@@ -2,63 +2,52 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStoreCategories } from "@/modules/categories/storefront";
+import type {
+  StoreCategoryImage,
+  StoreCategory,
+} from "@/modules/categories/types";
 
-type Category = {
+type CategoryCardData = {
   name: string;
-  count: string;
   href: string;
   image: string;
+  imageAlt: string;
 };
 
-const featured: Category[] = [
-  {
-    name: "Alfaiataria",
-    count: "48 peças",
-    href: "/categorias/alfaiataria",
-    image:
-      "https://images.unsplash.com/photo-1551803091-e20673f15770?q=80&w=1600&auto=format&fit=crop",
-  },
-  {
-    name: "Vestidos",
-    count: "36 peças",
-    href: "/categorias/vestidos",
-    image:
-      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?q=80&w=1600&auto=format&fit=crop",
-  },
-];
+const fallbackImages = [
+  "https://images.unsplash.com/photo-1551803091-e20673f15770?q=80&w=1600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?q=80&w=1600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop",
+] as const;
 
-const secondary: Category[] = [
-  {
-    name: "Camisas",
-    count: "27 peças",
-    href: "/categorias/camisas",
-    image:
-      "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    name: "Saias",
-    count: "19 peças",
-    href: "/categorias/saias",
-    image:
-      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    name: "Bolsas",
-    count: "23 peças",
-    href: "/categorias/bolsas",
-    image:
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    name: "Tricô",
-    count: "15 peças",
-    href: "/categorias/trico",
-    image:
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop",
-  },
-];
+const getCategoryImageAlt = (image: StoreCategoryImage | null, name: string) =>
+  image?.altText ?? name;
 
-export const CategoryGrid = () => {
+const mapStoreCategory = (
+  category: StoreCategory,
+  index: number,
+): CategoryCardData => ({
+  name: category.name,
+  href: `/categorias/${category.slug}`,
+  image: category.image?.url ?? fallbackImages[index % fallbackImages.length],
+  imageAlt: getCategoryImageAlt(category.image, category.name),
+});
+
+export const CategoriesGrid = async () => {
+  const categories = (await getStoreCategories({ limit: 6 })).map(
+    mapStoreCategory,
+  );
+  const featured = categories.slice(0, 2);
+  const secondary = categories.slice(2);
+
+  if (!categories.length) {
+    return null;
+  }
+
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-screen-2xl px-6 py-20 md:px-10 md:py-28">
@@ -80,27 +69,31 @@ export const CategoryGrid = () => {
           </Link>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-3 md:mt-14 md:grid-cols-2 md:gap-6">
-          {featured.map((category) => (
-            <CategoryCard
-              key={category.href}
-              category={category}
-              className="aspect-4/5 md:aspect-16/11"
-              titleClassName="text-2xl md:text-3xl"
-            />
-          ))}
-        </div>
+        {featured.length ? (
+          <div className="mt-10 grid grid-cols-1 gap-3 md:mt-14 md:grid-cols-2 md:gap-6">
+            {featured.map((category) => (
+              <CategoryCard
+                key={category.href}
+                category={category}
+                className="aspect-4/5 md:aspect-16/11"
+                titleClassName="text-2xl md:text-3xl"
+              />
+            ))}
+          </div>
+        ) : null}
 
-        <div className="mt-3 grid grid-cols-2 gap-3 md:mt-6 md:gap-6 lg:grid-cols-4">
-          {secondary.map((category) => (
-            <CategoryCard
-              key={category.href}
-              category={category}
-              className="aspect-3/4"
-              titleClassName="text-xl md:text-2xl"
-            />
-          ))}
-        </div>
+        {secondary.length ? (
+          <div className="mt-3 grid grid-cols-2 gap-3 md:mt-6 md:gap-6 lg:grid-cols-4">
+            {secondary.map((category) => (
+              <CategoryCard
+                key={category.href}
+                category={category}
+                className="aspect-3/4"
+                titleClassName="text-xl md:text-2xl"
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -111,7 +104,7 @@ const CategoryCard = ({
   className,
   titleClassName,
 }: {
-  category: Category;
+  category: CategoryCardData;
   className?: string;
   titleClassName?: string;
 }) => {
@@ -124,7 +117,7 @@ const CategoryCard = ({
       )}>
       <Image
         src={category.image}
-        alt={category.name}
+        alt={category.imageAlt}
         fill
         sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
         className="object-cover transition-transform duration-1100 ease-out group-hover:scale-105"
@@ -143,9 +136,6 @@ const CategoryCard = ({
             )}>
             {category.name}
           </h3>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/65">
-            {category.count}
-          </p>
         </div>
         <span className="flex size-9 shrink-0 translate-y-1 items-center justify-center border border-white/40 text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <ArrowUpRight className="size-4" />

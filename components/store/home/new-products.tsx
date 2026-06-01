@@ -2,10 +2,9 @@ import { ProductsRow } from "@/components/store/home/products-row";
 import { mapStoreProduct } from "@/lib/map-store-product";
 import { getStoreProducts } from "@/modules/products/storefront";
 
-export const FeaturedProducts = async () => {
+export const NewProducts = async () => {
   const { data } = await getStoreProducts({
     perPage: 4,
-    isFeatured: true,
     sortBy: "publishedAt",
     sortOrder: "desc",
   });
@@ -14,12 +13,12 @@ export const FeaturedProducts = async () => {
 
   return (
     <ProductsRow
-      subtitle="Seleção da estação"
-      title="Em destaque"
+      subtitle="Recém-chegadas"
+      title="Novidades"
       viewAllHref="/products"
       viewAllLabel="Ver todos os produtos"
       products={data.map((product, index) =>
-        mapStoreProduct(product, index, "Destaque"),
+        mapStoreProduct(product, index, "Novo"),
       )}
     />
   );

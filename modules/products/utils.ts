@@ -69,11 +69,14 @@ export const normalizeStoreProductsParams = (
   page: params.page ?? PAGINATION.DEFAULT_PAGE,
   perPage: params.perPage ?? STORE_PRODUCTS_PER_PAGE,
   search: params.search || undefined,
+  isFeatured:
+    typeof params.isFeatured === "boolean" ? params.isFeatured : undefined,
   sortBy:
     params.sortBy === "createdAt" ||
     params.sortBy === "publishedAt" ||
     params.sortBy === "name" ||
-    params.sortBy === "basePriceCents"
+    params.sortBy === "basePriceCents" ||
+    params.sortBy === "random"
       ? params.sortBy
       : "publishedAt",
   sortOrder: params.sortOrder ?? "desc",

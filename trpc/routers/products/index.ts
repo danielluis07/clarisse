@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { revalidatePath } from "next/cache";
 import {
   and,
   asc,
@@ -71,6 +72,10 @@ import {
 import { rethrowProductWriteError } from "@/modules/products/errors";
 import { unique } from "@/lib/array-utils";
 import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
+
+const revalidateStorefrontProducts = () => {
+  revalidatePath("/");
+};
 
 export const productsRouter = createTRPCRouter({
   formOptions: adminProcedure.query(async () => {
@@ -306,7 +311,7 @@ export const productsRouter = createTRPCRouter({
   listStoreProducts: baseProcedure
     .input(listStoreProductsInput)
     .query(async ({ input }) => {
-      const { page, perPage, search, sortBy, sortOrder } = input;
+      const { page, perPage, search, isFeatured, sortBy, sortOrder } = input;
       const offset = (page - 1) * perPage;
       const conditions = [eq(products.status, "active")];
 
@@ -320,29 +325,37 @@ export const productsRouter = createTRPCRouter({
 
         if (searchCondition) conditions.push(searchCondition);
       }
+      if (typeof isFeatured === "boolean") {
+        conditions.push(eq(products.isFeatured, isFeatured));
+      }
 
-      const orderByColumn = {
-        createdAt: products.createdAt,
-        publishedAt: products.publishedAt,
-        name: products.name,
-        basePriceCents: products.basePriceCents,
-      }[sortBy];
       const orderBy =
-        sortBy === "publishedAt"
-          ? sortOrder === "asc"
-            ? [
-                sql`${products.publishedAt} asc nulls last`,
-                asc(products.createdAt),
-                asc(products.id),
-              ]
-            : [
-                sql`${products.publishedAt} desc nulls last`,
-                desc(products.createdAt),
-                desc(products.id),
-              ]
-          : sortOrder === "asc"
-            ? [asc(orderByColumn), asc(products.id)]
-            : [desc(orderByColumn), desc(products.id)];
+        sortBy === "random"
+          ? [sql`random()`]
+          : (() => {
+              const orderByColumn = {
+                createdAt: products.createdAt,
+                publishedAt: products.publishedAt,
+                name: products.name,
+                basePriceCents: products.basePriceCents,
+              }[sortBy];
+
+              return sortBy === "publishedAt"
+                ? sortOrder === "asc"
+                  ? [
+                      sql`${products.publishedAt} asc nulls last`,
+                      asc(products.createdAt),
+                      asc(products.id),
+                    ]
+                  : [
+                      sql`${products.publishedAt} desc nulls last`,
+                      desc(products.createdAt),
+                      desc(products.id),
+                    ]
+                : sortOrder === "asc"
+                  ? [asc(orderByColumn), asc(products.id)]
+                  : [desc(orderByColumn), desc(products.id)];
+            })();
       const whereClause = and(...conditions);
 
       const [rows, total] = await Promise.all([
@@ -942,6 +955,8 @@ export const productsRouter = createTRPCRouter({
           return product;
         });
 
+        revalidateStorefrontProducts();
+
         return data;
       } catch (error) {
         return rethrowProductWriteError(error, "Erro ao criar produto");
@@ -1148,6 +1163,8 @@ export const productsRouter = createTRPCRouter({
           return product;
         });
 
+        revalidateStorefrontProducts();
+
         return data;
       } catch (error) {
         return rethrowProductWriteError(error, "Erro ao atualizar produto");
@@ -1189,6 +1206,8 @@ export const productsRouter = createTRPCRouter({
         });
 
         await purgeMediaAssetsFromS3(deletedMediaRows);
+
+        revalidateStorefrontProducts();
 
         return data;
       } catch (error) {
@@ -1234,6 +1253,8 @@ export const productsRouter = createTRPCRouter({
 
         await purgeMediaAssetsFromS3(deletedMediaRows);
 
+        revalidateStorefrontProducts();
+
         return deletedRows;
       } catch (error) {
         return rethrowProductWriteError(error, "Erro ao deletar produtos");
@@ -1264,6 +1285,8 @@ export const productsRouter = createTRPCRouter({
             message: "Não foi possível criar a variante",
           });
         }
+
+        revalidateStorefrontProducts();
 
         return {
           ...variant,
@@ -1357,6 +1380,8 @@ export const productsRouter = createTRPCRouter({
             message: "Variante não encontrada",
           });
         }
+
+        revalidateStorefrontProducts();
 
         return {
           ...variant,
@@ -1479,6 +1504,8 @@ export const productsRouter = createTRPCRouter({
           };
         });
 
+        revalidateStorefrontProducts();
+
         return result;
       } catch (error) {
         return rethrowProductWriteError(error, "Erro ao substituir variantes");
@@ -1533,6 +1560,8 @@ export const productsRouter = createTRPCRouter({
 
           return deleted;
         });
+
+        revalidateStorefrontProducts();
 
         return {
           ...variant,
