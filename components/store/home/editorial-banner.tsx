@@ -26,7 +26,7 @@ export const EditorialBanner = () => {
           leves, tons neutros e silhuetas pensadas para durar.
         </p>
         <Link
-          href="/editorial"
+          href="/editorial/vestir-se-devagar"
           className="group mt-10 inline-flex items-center gap-3 border border-white/40 px-9 py-4 text-[11px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-white hover:text-black">
           Ver o editorial
           <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />

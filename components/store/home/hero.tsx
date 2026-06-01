@@ -34,7 +34,8 @@ const getHeroImageProps = ({
   desktopImage: StoreBannerImage | null;
   mobileImage: StoreBannerImage | null;
 }) => {
-  const desktopSrc = desktopImage?.url ?? mobileImage?.url ?? fallbackHero.image;
+  const desktopSrc =
+    desktopImage?.url ?? mobileImage?.url ?? fallbackHero.image;
   const mobileSrc = mobileImage?.url ?? desktopSrc;
   const alt = desktopImage?.altText ?? mobileImage?.altText ?? fallbackHero.alt;
   const common = {
@@ -130,15 +131,13 @@ export const Hero = async () => {
           <div className="animate-in fade-in slide-in-from-bottom-4 fill-mode-both mt-10 flex flex-col gap-3 delay-500 duration-1000 sm:flex-row sm:items-center sm:gap-5">
             <Link
               href={banner?.ctaUrl ?? fallbackHero.ctaUrl}
-              className="group inline-flex items-center justify-center gap-3 bg-white px-9 py-4 text-[11px] uppercase tracking-[0.25em] text-black transition-colors hover:bg-white/90"
-            >
+              className="group inline-flex items-center justify-center gap-3 bg-white px-9 py-4 text-[11px] uppercase tracking-[0.25em] text-black transition-colors hover:bg-white/90">
               {banner?.ctaLabel ?? fallbackHero.ctaLabel}
               <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <Link
               href="/colecoes"
-              className="group inline-flex items-center justify-center gap-2 px-2 py-4 text-[11px] uppercase tracking-[0.25em] text-white"
-            >
+              className="group inline-flex items-center justify-center gap-2 px-2 py-4 text-[11px] uppercase tracking-[0.25em] text-white">
               <span className="border-b border-white/40 pb-1 transition-colors group-hover:border-white">
                 Explorar a coleção
               </span>

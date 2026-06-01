@@ -63,7 +63,7 @@ export const FeaturedCollection = () => {
             </ul>
 
             <Link
-              href="/colecoes/soft-tailoring"
+              href="/colecoes/inverno-2026"
               className="group mt-12 inline-flex items-center gap-3 bg-foreground px-9 py-4 text-[11px] uppercase tracking-[0.25em] text-background transition-opacity hover:opacity-90">
               Descobrir a coleção
               <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
