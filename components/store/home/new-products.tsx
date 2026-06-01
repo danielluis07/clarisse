@@ -12,14 +12,16 @@ export const NewProducts = async () => {
   if (!data.length) return null;
 
   return (
-    <ProductsRow
-      subtitle="Recém-chegadas"
-      title="Novidades"
-      viewAllHref="/products"
-      viewAllLabel="Ver todos os produtos"
-      products={data.map((product, index) =>
-        mapStoreProduct(product, index, "Novo"),
-      )}
-    />
+    <section id="new-products">
+      <ProductsRow
+        subtitle="Recém-chegadas"
+        title="Novidades"
+        viewAllHref="/products"
+        viewAllLabel="Ver todos os produtos"
+        products={data.map((product, index) =>
+          mapStoreProduct(product, index, "Novo"),
+        )}
+      />
+    </section>
   );
 };

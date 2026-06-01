@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 
 import { ProductBreadcrumb } from "@/components/store/product/product-breadcrumb";
 import { EditorialCard } from "@/components/store/editorial/editorial-card";
-import { PlaceholderProductGrid } from "@/components/store/placeholder-product-grid";
 import { Newsletter } from "@/components/store/home/newsletter";
 import {
   getEditorialBySlug,
@@ -13,7 +12,6 @@ import {
   getRelatedEditorials,
   type EditorialBlock,
 } from "@/lib/placeholder/editorial";
-import { getPlaceholderProducts } from "@/lib/placeholder/products";
 
 export const generateStaticParams = () =>
   getEditorials().map((story) => ({ slug: story.slug }));
@@ -94,7 +92,6 @@ const EditorialStoryPage = async ({
   if (!story) notFound();
 
   const related = getRelatedEditorials(slug, 3);
-  const shopProducts = getPlaceholderProducts(4, 2);
 
   return (
     <>
@@ -156,33 +153,6 @@ const EditorialStoryPage = async ({
           </div>
         </div>
       </article>
-
-      {/* Shop the story */}
-      <section className="border-y border-foreground/10 bg-secondary">
-        <div className="mx-auto max-w-screen-2xl px-6 py-16 md:px-10 md:py-24">
-          <div className="flex items-end justify-between gap-6">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/55">
-                Compre o editorial
-              </p>
-              <h2 className="mt-3 font-heading text-3xl font-light leading-tight md:text-4xl">
-                As peças da história
-              </h2>
-            </div>
-            <Link
-              href="/products"
-              className="group hidden shrink-0 items-center gap-2 pb-2 text-[11px] uppercase tracking-[0.22em] text-foreground/70 transition-colors hover:text-foreground md:inline-flex">
-              <span className="border-b border-foreground/30 pb-1 transition-colors group-hover:border-foreground">
-                Ver catálogo
-              </span>
-            </Link>
-          </div>
-
-          <div className="mt-10 md:mt-14">
-            <PlaceholderProductGrid products={shopProducts} />
-          </div>
-        </div>
-      </section>
 
       {/* Related stories */}
       {related.length > 0 && (

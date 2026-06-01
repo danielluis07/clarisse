@@ -4,8 +4,7 @@ import { AnnouncementBar } from "@/components/store/announcement-bar";
 import { CartSheet } from "@/components/store/cart/cart-sheet";
 
 const primaryNav = [
-  { label: "Novidades", href: "/novidades" },
-  { label: "Coleções", href: "/colecoes" },
+  { label: "Novidades", href: "#new-products" },
   { label: "Vestidos", href: "/categorias/vestidos" },
   { label: "Alfaiataria", href: "/categorias/alfaiataria" },
   { label: "Bolsas", href: "/categorias/bolsas" },

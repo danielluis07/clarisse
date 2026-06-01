@@ -311,7 +311,15 @@ export const productsRouter = createTRPCRouter({
   listStoreProducts: baseProcedure
     .input(listStoreProductsInput)
     .query(async ({ input }) => {
-      const { page, perPage, search, isFeatured, sortBy, sortOrder } = input;
+      const {
+        page,
+        perPage,
+        search,
+        collectionSlug,
+        isFeatured,
+        sortBy,
+        sortOrder,
+      } = input;
       const offset = (page - 1) * perPage;
       const conditions = [eq(products.status, "active")];
 
@@ -327,6 +335,23 @@ export const productsRouter = createTRPCRouter({
       }
       if (typeof isFeatured === "boolean") {
         conditions.push(eq(products.isFeatured, isFeatured));
+      }
+      if (collectionSlug) {
+        const collectionMatches = db
+          .select({ productId: productsToCollections.productId })
+          .from(productsToCollections)
+          .innerJoin(
+            collections,
+            eq(productsToCollections.collectionId, collections.id),
+          )
+          .where(
+            and(
+              eq(collections.slug, collectionSlug),
+              eq(collections.isActive, true),
+            ),
+          );
+
+        conditions.push(inArray(products.id, collectionMatches));
       }
 
       const orderBy =
