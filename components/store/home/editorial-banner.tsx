@@ -6,16 +6,13 @@ export const EditorialBanner = () => {
   return (
     <section className="relative isolate flex min-h-[78svh] w-full items-center justify-center overflow-hidden bg-foreground">
       <Image
-        src="https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?q=80&w=2400&auto=format&fit=crop"
+        src="https://images.unsplash.com/photo-1635693056259-c6e95113dbee"
         alt="Campanha editorial Clarisse"
         fill
         sizes="100vw"
         className="-z-10 object-cover object-center"
       />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-black/45"
-      />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-black/45" />
 
       <div className="mx-auto max-w-2xl px-6 py-24 text-center">
         <p className="text-[11px] uppercase tracking-[0.4em] text-white/80">
@@ -30,8 +27,7 @@ export const EditorialBanner = () => {
         </p>
         <Link
           href="/editorial"
-          className="group mt-10 inline-flex items-center gap-3 border border-white/40 px-9 py-4 text-[11px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-white hover:text-black"
-        >
+          className="group mt-10 inline-flex items-center gap-3 border border-white/40 px-9 py-4 text-[11px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-white hover:text-black">
           Ver o editorial
           <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
         </Link>
