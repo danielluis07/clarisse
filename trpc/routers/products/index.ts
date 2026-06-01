@@ -315,6 +315,7 @@ export const productsRouter = createTRPCRouter({
         page,
         perPage,
         search,
+        categoryId,
         collectionSlug,
         isFeatured,
         sortBy,
@@ -335,6 +336,9 @@ export const productsRouter = createTRPCRouter({
       }
       if (typeof isFeatured === "boolean") {
         conditions.push(eq(products.isFeatured, isFeatured));
+      }
+      if (categoryId) {
+        conditions.push(eq(products.categoryId, categoryId));
       }
       if (collectionSlug) {
         const collectionMatches = db

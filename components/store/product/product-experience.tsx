@@ -108,9 +108,9 @@ export const ProductExperience = ({
     );
     openCart();
 
-    toast.success("Adicionado à sacola", {
+    /*     toast.success("Adicionado à sacola", {
       description: `${product.name} · ${selectedVariant.colorName} · ${selectedVariant.size} · ${selectedQuantity}x`,
-    });
+    }); */
   };
 
   if (!selectedColor) {

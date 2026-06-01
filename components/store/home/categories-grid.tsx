@@ -10,7 +10,12 @@ import type {
 
 type CategoryCardData = {
   name: string;
-  href: string;
+  href: {
+    pathname: "/products";
+    query: {
+      categoryId: string;
+    };
+  };
   image: string;
   imageAlt: string;
 };
@@ -32,7 +37,12 @@ const mapStoreCategory = (
   index: number,
 ): CategoryCardData => ({
   name: category.name,
-  href: `/categorias/${category.slug}`,
+  href: {
+    pathname: "/products",
+    query: {
+      categoryId: category.id,
+    },
+  },
   image: category.image?.url ?? fallbackImages[index % fallbackImages.length],
   imageAlt: getCategoryImageAlt(category.image, category.name),
 });
@@ -73,7 +83,7 @@ export const CategoriesGrid = async () => {
           <div className="mt-10 grid grid-cols-1 gap-3 md:mt-14 md:grid-cols-2 md:gap-6">
             {featured.map((category) => (
               <CategoryCard
-                key={category.href}
+                key={category.href.query.categoryId}
                 category={category}
                 className="aspect-4/5 md:aspect-16/11"
                 titleClassName="text-2xl md:text-3xl"
@@ -86,7 +96,7 @@ export const CategoriesGrid = async () => {
           <div className="mt-3 grid grid-cols-2 gap-3 md:mt-6 md:gap-6 lg:grid-cols-4">
             {secondary.map((category) => (
               <CategoryCard
-                key={category.href}
+                key={category.href.query.categoryId}
                 category={category}
                 className="aspect-3/4"
                 titleClassName="text-xl md:text-2xl"

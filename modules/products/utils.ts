@@ -69,6 +69,7 @@ export const normalizeStoreProductsParams = (
   page: params.page ?? PAGINATION.DEFAULT_PAGE,
   perPage: params.perPage ?? STORE_PRODUCTS_PER_PAGE,
   search: params.search || undefined,
+  categoryId: params.categoryId || undefined,
   collectionSlug: params.collectionSlug || undefined,
   isFeatured:
     typeof params.isFeatured === "boolean" ? params.isFeatured : undefined,

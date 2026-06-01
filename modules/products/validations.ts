@@ -436,6 +436,7 @@ export const listStoreProductsInput = z.object({
   page: z.number().int().min(1).default(1),
   perPage: z.number().int().min(1).max(48).default(STORE_PRODUCTS_PER_PAGE),
   search: z.string().trim().max(120).optional(),
+  categoryId: z.string().trim().min(1).optional(),
   collectionSlug: z.string().trim().min(1).max(160).optional(),
   isFeatured: z.boolean().optional(),
   sortBy: storeProductSortBySchema.default("publishedAt"),
@@ -571,6 +572,7 @@ export const productsSearchParamsSchema = z.object({
 export const storeProductsSearchParamsSchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
   search: z.string().trim().max(120).optional(),
+  categoryId: z.string().trim().min(1).optional(),
   collectionSlug: z.string().trim().max(160).optional(),
   sortBy: storeProductSortBySchema.optional(),
   sortOrder: productSortOrderSchema.optional(),

@@ -1,15 +1,10 @@
 import Link from "next/link";
-import { Search, User, Menu } from "lucide-react";
+import { Suspense } from "react";
+import { User, Menu } from "lucide-react";
 import { AnnouncementBar } from "@/components/store/announcement-bar";
 import { CartSheet } from "@/components/store/cart/cart-sheet";
-
-const primaryNav = [
-  { label: "Novidades", href: "#new-products" },
-  { label: "Vestidos", href: "/categorias/vestidos" },
-  { label: "Alfaiataria", href: "/categorias/alfaiataria" },
-  { label: "Bolsas", href: "/categorias/bolsas" },
-  { label: "Editorial", href: "/editorial" },
-];
+import { HeaderNav, HeaderNavSkeleton } from "@/components/store/header-nav";
+import { SearchDialog } from "@/components/store/search-dialog";
 
 export const Header = () => {
   return (
@@ -24,15 +19,7 @@ export const Header = () => {
               className="text-foreground/80 transition-colors hover:text-foreground lg:hidden">
               <Menu className="size-5" />
             </button>
-            <button
-              type="button"
-              aria-label="Buscar"
-              className="hidden items-center gap-2 text-foreground/80 transition-colors hover:text-foreground lg:flex">
-              <Search className="size-4" />
-              <span className="text-[11px] uppercase tracking-[0.22em]">
-                Buscar
-              </span>
-            </button>
+            <SearchDialog />
           </div>
 
           <Link
@@ -43,12 +30,7 @@ export const Header = () => {
           </Link>
 
           <div className="flex flex-1 items-center justify-end gap-5">
-            <button
-              type="button"
-              aria-label="Buscar"
-              className="text-foreground/80 transition-colors hover:text-foreground lg:hidden">
-              <Search className="size-5" />
-            </button>
+            <SearchDialog trigger="mobile" />
             <Link
               href="/login"
               aria-label="Conta"
@@ -59,19 +41,9 @@ export const Header = () => {
           </div>
         </div>
 
-        <nav className="hidden border-t border-foreground/10 lg:block">
-          <ul className="mx-auto flex max-w-screen-2xl items-center justify-center gap-12 px-10 py-3">
-            {primaryNav.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="text-[11px] uppercase tracking-[0.22em] text-foreground/70 transition-colors hover:text-foreground">
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <Suspense fallback={<HeaderNavSkeleton />}>
+          <HeaderNav />
+        </Suspense>
       </header>
     </div>
   );

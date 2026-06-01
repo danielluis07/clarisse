@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SheetClose, SheetFooter } from "@/components/ui/sheet";
 import {
@@ -9,12 +10,13 @@ import {
 } from "@/hooks/cart";
 import { centsToReais } from "@/lib/utils";
 import type { CartItem } from "@/types/cart";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const FREE_SHIPPING_THRESHOLD_CENTS = 80000;
 
 export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
   const clearCart = useCartStore((state) => state.clearCart);
+  const router = useRouter();
   const subtotalCents = getCartSubtotalCents(items);
   const itemCount = getCartItemCount(items);
   const freeShippingRemaining = Math.max(
@@ -55,11 +57,15 @@ export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
       <Separator />
 
       <div className="flex flex-col gap-3">
-        <Link
-          href="/checkout"
-          className="flex h-12 items-center justify-center bg-foreground px-6 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90">
-          Finalizar compra
-        </Link>
+        <SheetClose asChild>
+          <Button
+            onClick={() => {
+              router.push("/checkout");
+            }}
+            className="flex h-12 items-center justify-center bg-foreground px-6 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90">
+            Finalizar compra
+          </Button>
+        </SheetClose>
 
         <div className="grid grid-cols-2 gap-3">
           <SheetClose asChild>
