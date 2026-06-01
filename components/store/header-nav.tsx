@@ -37,7 +37,7 @@ export const HeaderNavSkeleton = () => {
       aria-hidden="true"
       className="hidden border-t border-foreground/10 lg:block">
       <div className="mx-auto flex max-w-screen-2xl items-center justify-center gap-12 px-10 py-3">
-        {Array.from({ length: 6 }).map((_, index) => (
+        {Array.from({ length: CATEGORY_NAV_LIMIT }).map((_, index) => (
           <div
             key={index}
             className="h-3 rounded-full bg-linear-to-r from-foreground/5 via-foreground/15 to-foreground/5"
