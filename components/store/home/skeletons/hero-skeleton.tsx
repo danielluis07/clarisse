@@ -4,12 +4,12 @@ import { HERO_SECTION_ASPECT_CLASS } from "@/modules/banners/hero-layout";
  * Loading state for the home hero. Mirrors the real hero's geometry and
  * bottom-left content layout (eyebrow → title → description → CTAs) so the
  * swap to the loaded hero is seamless rather than a jarring block-to-content
- * pop. Same aspect ratio + `min-h-136` as `Hero`, so there's no layout shift.
+ * pop. Same aspect ratio + `min-h-112` as `Hero`, so there's no layout shift.
  */
 export const HeroSkeleton = () => (
   <section
     aria-hidden="true"
-    className={`relative isolate flex ${HERO_SECTION_ASPECT_CLASS} min-h-136 w-full items-end overflow-hidden bg-neutral-900`}>
+    className={`relative isolate flex ${HERO_SECTION_ASPECT_CLASS} min-h-112 w-full items-end overflow-hidden bg-neutral-900`}>
     {/* Soft animated wash standing in for the image. */}
     <div className="absolute inset-0 -z-10 animate-pulse bg-linear-to-br from-neutral-800 via-neutral-900 to-neutral-950" />
     {/* Match the hero scrim so the loaded state feels continuous. */}

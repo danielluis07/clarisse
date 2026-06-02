@@ -89,7 +89,7 @@ export const Hero = async () => {
 
   return (
     <section
-      className={`relative isolate flex ${HERO_SECTION_ASPECT_CLASS} min-h-136 w-full items-end overflow-hidden bg-neutral-900`}>
+      className={`relative isolate flex ${HERO_SECTION_ASPECT_CLASS} min-h-112 w-full items-end overflow-hidden bg-neutral-900`}>
       <picture>
         <source media="(min-width: 768px)" srcSet={desktop} />
         <source srcSet={mobile} />

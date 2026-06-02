@@ -54,7 +54,7 @@ export const BannerImageField = ({
         <div className="flex flex-col gap-2">
           <Label className="text-sm">Imagem desktop</Label>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Home hero: recomendo 2400x1320 (proporção 20:11), mínimo 1800x990. A
+            Home hero: recomendo 2400x960 (proporção 5:2), mínimo 1800x720. A
             imagem é recortada nessa proporção — mantenha a área inferior
             esquerda livre para texto e CTA e ajuste o ponto focal abaixo.
           </p>
@@ -88,7 +88,7 @@ export const BannerImageField = ({
         <div className="flex flex-col gap-2">
           <Label className="text-sm">Imagem mobile</Label>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Home hero mobile: recomendo 1080x1920 (proporção 9:16). Envie um
+            Home hero mobile: recomendo 1080x1350 (proporção 4:5). Envie um
             corte vertical dedicado, não a mesma imagem desktop, e ajuste o ponto
             focal abaixo.
           </p>

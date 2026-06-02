@@ -15,20 +15,20 @@
  * here. Build them dynamically and they won't be generated.
  */
 
-/** Desktop crop ratio — matches the 2400×1320 (20:11) desktop upload guidance. */
-export const HERO_DESKTOP_ASPECT_CLASS = "aspect-20/11";
+/** Desktop crop ratio — matches the 2400x960 (5:2) desktop upload guidance. */
+export const HERO_DESKTOP_ASPECT_CLASS = "aspect-5/2";
 
-/** Mobile crop ratio — matches the 1080×1920 (9:16) mobile upload guidance. */
-export const HERO_MOBILE_ASPECT_CLASS = "aspect-9/16";
+/** Mobile crop ratio — matches the 1080x1350 (4:5) mobile upload guidance. */
+export const HERO_MOBILE_ASPECT_CLASS = "aspect-4/5";
 
 /**
- * Responsive aspect for the full-bleed hero section: portrait on mobile,
- * editorial-wide from `md` up. `max-h-[100svh]` is a safety cap so the hero
+ * Responsive aspect for the full-bleed hero section: editorial portrait on
+ * mobile, wide from `md` up. `max-h-[86svh]` is a safety cap so the hero
  * never grows taller than the viewport on ultrawide monitors (where it crops
  * the sides, guided by the focal point).
  */
 export const HERO_SECTION_ASPECT_CLASS =
-  "aspect-9/16 md:aspect-20/11 max-h-[100svh]";
+  "aspect-4/5 md:aspect-5/2 max-h-[86svh]";
 
 /**
  * Object-position classes wired to per-breakpoint CSS variables. The variables
