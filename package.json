@@ -6,11 +6,13 @@
     "dev": "bun --bun next dev",
     "build": "bun --bun next build",
     "start": "bun --bun next start",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed:customers": "bun --bun scripts/seed-customers.ts",
     "db:seed:categories": "bun --bun scripts/seed-categories.ts",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "test": "bun test"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.64",
