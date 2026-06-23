@@ -3,7 +3,13 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { PlaceholderCollection } from "@/lib/placeholder/collections";
+import type { StoreCollection } from "@/modules/collections/types";
+import {
+  formatPieceCount,
+  getCollectionDescription,
+  getCollectionEyebrow,
+  getCollectionImage,
+} from "@/components/store/collections/collection-utils";
 
 export const CollectionCard = ({
   collection,
@@ -11,11 +17,12 @@ export const CollectionCard = ({
   titleClassName,
   priority = false,
 }: {
-  collection: PlaceholderCollection;
+  collection: StoreCollection;
   className?: string;
   titleClassName?: string;
   priority?: boolean;
 }) => {
+  const image = getCollectionImage(collection);
   return (
     <Link
       href={`/colecoes/${collection.slug}`}
@@ -24,8 +31,8 @@ export const CollectionCard = ({
         className,
       )}>
       <Image
-        src={collection.image}
-        alt={collection.imageAlt}
+        src={image.src}
+        alt={image.alt}
         fill
         priority={priority}
         sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
@@ -39,7 +46,8 @@ export const CollectionCard = ({
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-6 md:p-8">
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-[0.28em] text-white/65">
-            {collection.eyebrow} · {collection.productCount} peças
+            {getCollectionEyebrow(collection)} ·{" "}
+            {formatPieceCount(collection.productCount)}
           </p>
           <h3
             className={cn(
@@ -48,8 +56,8 @@ export const CollectionCard = ({
             )}>
             {collection.name}
           </h3>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/75">
-            {collection.tagline}
+          <p className="mt-2 max-w-xs line-clamp-2 text-sm leading-relaxed text-white/75">
+            {getCollectionDescription(collection)}
           </p>
         </div>
         <span className="flex size-10 shrink-0 translate-y-1 items-center justify-center border border-white/40 text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">

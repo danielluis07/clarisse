@@ -18,7 +18,7 @@ export const CollectionHero = ({
   return (
     <section className="relative isolate flex min-h-[68svh] w-full items-end overflow-hidden bg-neutral-900">
       <Image
-        src="https://images.unsplash.com/photo-1650406796799-8f56451b19f7"
+        src={image.src}
         alt={image.alt}
         fill
         priority
