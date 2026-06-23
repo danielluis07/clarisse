@@ -1,8 +1,9 @@
+import { env } from "@/lib/env";
 import { db } from "@/db";
 import { collections } from "@/db/schema";
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
+  if (!env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required to seed collections");
   }
 

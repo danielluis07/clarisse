@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
 
 import { db } from "@/db";
+import { env } from "@/lib/env";
 import { categories, collections, products } from "@/db/schema";
 import type { ProductAiCatalogOptions } from "@/modules/products/types";
 
@@ -53,7 +54,7 @@ const productSlugExists = async (slug: string, excludeId?: string) => {
 const DEFAULT_MODEL = "gpt-5.4-mini";
 
 export const getOpenAIModel = () =>
-  process.env.OPENAI_CHAT_MODEL?.trim() || DEFAULT_MODEL;
+  env.OPENAI_CHAT_MODEL?.trim() || DEFAULT_MODEL;
 
 export const getCatalogOptions = async (): Promise<ProductAiCatalogOptions> => {
   const [categoryOptions, collectionOptions] = await Promise.all([

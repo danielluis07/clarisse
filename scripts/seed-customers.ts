@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import { db } from "@/db";
 import { customers } from "@/db/schema";
 
@@ -134,7 +135,7 @@ const customerSeeds: CustomerSeed[] = [
 ];
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
+  if (!env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required to seed customers");
   }
 

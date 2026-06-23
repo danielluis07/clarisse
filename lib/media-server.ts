@@ -4,12 +4,13 @@ import { inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { mediaAssets } from "@/db/schema";
+import { env } from "@/lib/env";
 import { client } from "@/lib/s3";
 
 export const parseS3KeyFromUrl = (url: string): string | null => {
   try {
     const parsed = new URL(url);
-    const expectedHost = `${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`;
+    const expectedHost = `${env.AWS_BUCKET_NAME}.s3.${env.AWS_REGION}.amazonaws.com`;
     if (parsed.host !== expectedHost) return null;
     const key = parsed.pathname.replace(/^\//, "");
     return key || null;

@@ -12,8 +12,17 @@ import {
 } from "ai";
 
 import { getCurrentSession } from "@/lib/auth-utils";
-import { getCatalogOptions, getOpenAIModel } from "@/modules/products/server-utils";
-import { buildPrompt, getImageInput, parseImageDescriptors, sanitizeAnalysis } from "@/modules/products/utils";
+import { env } from "@/lib/env";
+import {
+  getCatalogOptions,
+  getOpenAIModel,
+} from "@/modules/products/server-utils";
+import {
+  buildPrompt,
+  getImageInput,
+  parseImageDescriptors,
+  sanitizeAnalysis,
+} from "@/modules/products/utils";
 import { productImageAnalysisSchema } from "@/modules/products/validations";
 
 export async function analyzeProductImagesAction(formData: FormData) {
@@ -23,7 +32,7 @@ export async function analyzeProductImagesAction(formData: FormData) {
     throw new Error("Acesso restrito ao administrador.");
   }
 
-  if (!process.env.OPENAI_API_KEY?.trim()) {
+  if (!env.OPENAI_API_KEY?.trim()) {
     throw new Error("OPENAI_API_KEY não configurada.");
   }
 

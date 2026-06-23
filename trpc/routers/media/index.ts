@@ -9,6 +9,7 @@ import {
   parseS3KeyFromUrl,
   purgeMediaAssetsFromS3,
 } from "@/lib/media-server";
+import { env } from "@/lib/env";
 import { client } from "@/lib/s3";
 import {
   TEMPORARY_MEDIA_TTL_MS,
@@ -26,7 +27,7 @@ import { adminProcedure, createTRPCRouter } from "@/trpc/init";
 import { sanitizeFilename } from "@/modules/media/utils";
 
 const buildPublicUrl = (key: string) =>
-  `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  `https://${env.AWS_BUCKET_NAME}.s3.${env.AWS_REGION}.amazonaws.com/${key}`;
 
 export const mediaRouter = createTRPCRouter({
   getById: adminProcedure.input(getAssetInput).query(async ({ input }) => {
@@ -99,7 +100,7 @@ export const mediaRouter = createTRPCRouter({
         .values({
           key,
           url: input.url,
-          bucket: process.env.AWS_BUCKET_NAME ?? null,
+          bucket: env.AWS_BUCKET_NAME ?? null,
           filename: input.filename,
           mimeType: input.mimeType,
           type: "image",

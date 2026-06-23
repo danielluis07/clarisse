@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { env } from "./lib/env";
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -15,7 +16,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: process.env.S3_IMAGE_HOSTNAME!,
+        hostname: env.S3_IMAGE_HOSTNAME,
       },
     ],
   },

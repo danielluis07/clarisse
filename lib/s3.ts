@@ -1,6 +1,8 @@
+import { env } from "@/lib/env";
+
 export const client = new Bun.S3Client({
-  region: process.env.AWS_REGION!,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  bucket: process.env.AWS_BUCKET_NAME!,
+  region: env.AWS_REGION,
+  accessKeyId: env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  bucket: env.AWS_BUCKET_NAME,
 });
