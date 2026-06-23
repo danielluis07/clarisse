@@ -25,19 +25,60 @@ export const CheckoutView = () => {
     return <CheckoutEmpty />;
   }
 
-  const handlePlaceOrder = (event: FormEvent<HTMLFormElement>) => {
+  const handlePlaceOrder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isPlacingOrder) return;
 
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
     setIsPlacingOrder(true);
-    // Simulate processing — payment is not wired up yet.
-    window.setTimeout(() => {
-      setIsPlacingOrder(false);
-      toast.info("Checkout em modo demonstração", {
-        description:
-          "A integração de pagamento ainda não está disponível. Nenhuma cobrança foi feita.",
+    try {
+      const response = await fetch("/api/checkout/mercadopago", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer: {
+            email: formData.get("email"),
+            name: formData.get("name"),
+            postalCode: formData.get("postalCode"),
+            phone: formData.get("phone"),
+            addressLine1: formData.get("addressLine1"),
+            number: formData.get("number"),
+            addressLine2: formData.get("addressLine2"),
+            neighborhood: formData.get("neighborhood"),
+            city: formData.get("city"),
+            state: formData.get("state"),
+          },
+          items: items.map((item) => ({
+            productVariantId: item.productVariantId,
+            quantity: item.quantity,
+          })),
+        }),
       });
-    }, 900);
+
+      const data = (await response.json().catch(() => null)) as
+        | { initPoint?: string; message?: string }
+        | null;
+
+      if (!response.ok || !data?.initPoint) {
+        throw new Error(
+          data?.message ?? "Não foi possível iniciar o pagamento.",
+        );
+      }
+
+      window.location.assign(data.initPoint);
+    } catch (error) {
+      setIsPlacingOrder(false);
+      toast.error("Não foi possível iniciar o pagamento", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Revise os dados e tente novamente.",
+      });
+    }
   };
 
   return (

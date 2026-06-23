@@ -747,6 +747,15 @@ export const orders = pgTable(
     fulfillmentStatus: fulfillmentStatusEnum("fulfillment_status")
       .notNull()
       .default("unfulfilled"),
+    paymentProvider: text("payment_provider"),
+    mercadoPagoPreferenceId: text("mercado_pago_preference_id"),
+    mercadoPagoPaymentId: text("mercado_pago_payment_id"),
+    mercadoPagoPaymentStatus: text("mercado_pago_payment_status"),
+    mercadoPagoPaymentStatusDetail: text("mercado_pago_payment_status_detail"),
+    mercadoPagoPaymentType: text("mercado_pago_payment_type"),
+    mercadoPagoPaymentMethodId: text("mercado_pago_payment_method_id"),
+    mercadoPagoMerchantOrderId: text("mercado_pago_merchant_order_id"),
+    mercadoPagoLiveMode: boolean("mercado_pago_live_mode"),
     customerName: text("customer_name").notNull(),
     customerEmail: text("customer_email").notNull(),
     customerPhone: text("customer_phone"),
@@ -768,15 +777,25 @@ export const orders = pgTable(
     fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
     canceledAt: timestamp("canceled_at", { withTimezone: true }),
     refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    inventoryDeductedAt: timestamp("inventory_deducted_at", {
+      withTimezone: true,
+    }),
     ...timestamps(),
   },
   (table) => [
     uniqueIndex("orders_order_number_idx").on(table.orderNumber),
+    uniqueIndex("orders_mercado_pago_preference_id_idx")
+      .on(table.mercadoPagoPreferenceId)
+      .where(sql`${table.mercadoPagoPreferenceId} is not null`),
+    uniqueIndex("orders_mercado_pago_payment_id_idx")
+      .on(table.mercadoPagoPaymentId)
+      .where(sql`${table.mercadoPagoPaymentId} is not null`),
     index("orders_user_id_idx").on(table.userId),
     index("orders_customer_id_idx").on(table.customerId),
     index("orders_status_idx").on(table.status),
     index("orders_payment_status_idx").on(table.paymentStatus),
     index("orders_fulfillment_status_idx").on(table.fulfillmentStatus),
+    index("orders_payment_provider_idx").on(table.paymentProvider),
     index("orders_created_at_idx").on(table.createdAt),
     check(
       "orders_subtotal_cents_non_negative",
@@ -898,6 +917,34 @@ export const inventoryMovements = pgTable(
       "inventory_movements_quantity_delta_non_zero",
       sql`${table.quantityDelta} <> 0`,
     ),
+  ],
+);
+
+export const paymentWebhookEvents = pgTable(
+  "payment_webhook_events",
+  {
+    id: id(),
+    provider: text("provider").notNull().default("mercadopago"),
+    providerEventId: text("provider_event_id"),
+    resourceId: text("resource_id").notNull(),
+    topic: text("topic").notNull(),
+    action: text("action"),
+    xRequestId: text("x_request_id").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    processingError: text("processing_error"),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex("payment_webhook_events_provider_request_idx").on(
+      table.provider,
+      table.xRequestId,
+    ),
+    index("payment_webhook_events_provider_resource_idx").on(
+      table.provider,
+      table.resourceId,
+    ),
+    index("payment_webhook_events_processed_at_idx").on(table.processedAt),
   ],
 );
 

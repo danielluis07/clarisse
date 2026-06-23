@@ -7,6 +7,9 @@ export const env = createEnv({
   },
   server: {
     DATABASE_URL: z.string().min(1),
+    MP_PUBLIC_KEY: z.string().min(1),
+    MP_ACCESS_TOKEN: z.string().min(1),
+    MP_WEBHOOK_SECRET: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(1),
     BETTER_AUTH_URL: z.url(),
     AWS_REGION: z.string().min(1),
@@ -19,6 +22,9 @@ export const env = createEnv({
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
+    MP_PUBLIC_KEY: process.env.MP_PUBLIC_KEY,
+    MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN,
+    MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
