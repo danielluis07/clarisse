@@ -20,9 +20,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  allowedDevOrigins: [
-    "ed23-2804-e24-fd5a-9f00-fd13-1c50-6b75-80d7.ngrok-free.app",
-  ],
+  allowedDevOrigins: env.NGROK_URL
+    ? [new URL(env.NGROK_URL).hostname]
+    : undefined,
 };
 
 export default nextConfig;

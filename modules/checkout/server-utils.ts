@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   cartItems,
@@ -10,208 +10,29 @@ import {
   orderItems,
   orders,
   paymentWebhookEvents,
-  products,
   productVariants,
 } from "@/db/schema";
 import { getCurrentSession } from "@/lib/auth-utils";
-import { env } from "@/lib/env";
 import { mpPayment, mpPreference } from "@/lib/mercadopago";
-import type { AddressSnapshot } from "@/types/db";
-import {
-  CHECKOUT_INSTALLMENTS,
-  getCheckoutShippingCents,
-} from "@/modules/checkout/constants";
+import { getCheckoutShippingCents } from "@/modules/checkout/constants";
+import { CheckoutError } from "@/modules/checkout/errors";
 import { mapMercadoPagoPaymentStatus } from "@/modules/checkout/payment-status";
+import { getCheckoutLines } from "@/modules/checkout/queries";
+import {
+  buildShippingAddress,
+  centsToMercadoPagoAmount,
+  amountToCents,
+  generateOrderNumber,
+  getCheckoutAppUrl,
+  getPaymentApprovedAt,
+  getPaymentOrderId,
+  splitBrazilPhone,
+  splitName,
+} from "@/modules/checkout/utils";
 import type { CreateMercadoPagoCheckoutInput } from "@/modules/checkout/validations";
-import type {
-  MercadoPagoPayment,
-  MercadoPagoWebhookPayload,
-} from "@/types/mercadopago";
-import { CheckoutLine } from "@/modules/checkout/types";
+import type { MercadoPagoWebhookPayload } from "@/types/mercadopago";
 
-export class CheckoutError extends Error {
-  constructor(
-    message: string,
-    public readonly status = 400,
-  ) {
-    super(message);
-    this.name = "CheckoutError";
-  }
-}
-
-const centsToMercadoPagoAmount = (cents: number) =>
-  Number((cents / 100).toFixed(2));
-
-const amountToCents = (amount: number | undefined) =>
-  Math.round((amount ?? 0) * 100);
-
-const generateOrderNumber = () => {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const suffix = Bun.randomUUIDv7().slice(-6).toUpperCase();
-
-  return `CLA-${timestamp}-${suffix}`;
-};
-
-const splitName = (name: string) => {
-  const parts = name.trim().split(/\s+/);
-  const firstName = parts.shift() ?? name;
-  const lastName = parts.join(" ");
-
-  return {
-    firstName,
-    lastName,
-  };
-};
-
-const splitBrazilPhone = (phone: string) => {
-  const digits = phone.replace(/\D/g, "");
-
-  if (digits.length <= 2) {
-    return { number: digits };
-  }
-
-  return {
-    area_code: digits.slice(0, 2),
-    number: digits.slice(2),
-  };
-};
-
-const buildShippingAddress = (
-  customer: CreateMercadoPagoCheckoutInput["customer"],
-): AddressSnapshot => ({
-  recipientName: customer.name,
-  phone: customer.phone,
-  country: "BR",
-  postalCode: customer.postalCode,
-  state: customer.state,
-  city: customer.city,
-  neighborhood: customer.neighborhood,
-  addressLine1: customer.addressLine1,
-  addressLine2: customer.addressLine2,
-  number: customer.number,
-});
-
-const normalizeCheckoutItems = (
-  items: CreateMercadoPagoCheckoutInput["items"],
-) => {
-  const quantitiesByVariantId = new Map<string, number>();
-
-  for (const item of items) {
-    quantitiesByVariantId.set(
-      item.productVariantId,
-      (quantitiesByVariantId.get(item.productVariantId) ?? 0) + item.quantity,
-    );
-  }
-
-  return Array.from(quantitiesByVariantId, ([productVariantId, quantity]) => ({
-    productVariantId,
-    quantity,
-  }));
-};
-
-const getCheckoutLines = async (
-  inputItems: CreateMercadoPagoCheckoutInput["items"],
-): Promise<CheckoutLine[]> => {
-  const items = normalizeCheckoutItems(inputItems);
-  const variantIds = items.map((item) => item.productVariantId);
-
-  const rows = await db
-    .select({
-      productVariantId: productVariants.id,
-      productId: productVariants.productId,
-      productName: products.name,
-      productSlug: products.slug,
-      productSubtitle: products.subtitle,
-      productStatus: products.status,
-      basePriceCents: products.basePriceCents,
-      productCompareAtPriceCents: products.compareAtPriceCents,
-      currency: products.currency,
-      sku: productVariants.sku,
-      colorName: productVariants.colorName,
-      colorHex: productVariants.colorHex,
-      size: productVariants.size,
-      priceCents: productVariants.priceCents,
-      compareAtPriceCents: productVariants.compareAtPriceCents,
-      stockQuantity: productVariants.stockQuantity,
-      isActive: productVariants.isActive,
-    })
-    .from(productVariants)
-    .innerJoin(products, eq(productVariants.productId, products.id))
-    .where(
-      and(
-        inArray(productVariants.id, variantIds),
-        eq(productVariants.isActive, true),
-        eq(products.status, "active"),
-      ),
-    );
-
-  const rowsByVariantId = new Map(
-    rows.map((row) => [row.productVariantId, row]),
-  );
-
-  return items.map((item) => {
-    const row = rowsByVariantId.get(item.productVariantId);
-
-    if (!row) {
-      console.warn("Checkout item no longer available", {
-        productVariantId: item.productVariantId,
-        quantity: item.quantity,
-      });
-
-      throw new CheckoutError(
-        "Um dos itens da sacola não está mais disponível.",
-        409,
-      );
-    }
-
-    if (row.currency !== "BRL") {
-      console.warn("Checkout item currency mismatch", {
-        productVariantId: row.productVariantId,
-        currency: row.currency,
-      });
-
-      throw new CheckoutError(
-        "O Mercado Pago está configurado para pedidos em BRL.",
-        409,
-      );
-    }
-
-    if (row.stockQuantity < item.quantity) {
-      console.warn("Checkout item stock insufficient", {
-        productVariantId: row.productVariantId,
-        productName: row.productName,
-        requestedQuantity: item.quantity,
-        stockQuantity: row.stockQuantity,
-      });
-
-      throw new CheckoutError(
-        `Estoque insuficiente para ${row.productName} (${row.colorName} / ${row.size}).`,
-        409,
-      );
-    }
-
-    const unitPriceCents = row.priceCents ?? row.basePriceCents;
-    const compareAtPriceCents =
-      row.compareAtPriceCents ?? row.productCompareAtPriceCents;
-
-    return {
-      productVariantId: row.productVariantId,
-      productId: row.productId,
-      productName: row.productName,
-      productSlug: row.productSlug,
-      productSubtitle: row.productSubtitle,
-      sku: row.sku,
-      colorName: row.colorName,
-      colorHex: row.colorHex,
-      size: row.size,
-      quantity: item.quantity,
-      unitPriceCents,
-      compareAtPriceCents,
-      lineTotalCents: unitPriceCents * item.quantity,
-      currency: row.currency,
-    };
-  });
-};
+export { CheckoutError } from "@/modules/checkout/errors";
 
 export const createMercadoPagoCheckout = async (
   input: CreateMercadoPagoCheckoutInput,
@@ -341,9 +162,9 @@ export const createMercadoPagoCheckout = async (
     return order;
   });
 
-  const appUrl =
-    "https://ed23-2804-e24-fd5a-9f00-fd13-1c50-6b75-80d7.ngrok-free.app";
+  const appUrl = getCheckoutAppUrl();
   const { firstName, lastName } = splitName(customer.name);
+
   const preference = await mpPreference.create({
     body: {
       items: lines.map((line) => ({
@@ -384,23 +205,18 @@ export const createMercadoPagoCheckout = async (
         pending: `${appUrl}/checkout/retorno?status=pending&order_id=${createdOrder.id}`,
         failure: `${appUrl}/checkout/retorno?status=failure&order_id=${createdOrder.id}`,
       },
+      notification_url: `${appUrl}/api/webhooks/mercadopago`,
       auto_return: "approved",
       external_reference: createdOrder.id,
       metadata: {
         order_id: createdOrder.id,
         order_number: createdOrder.orderNumber,
       },
-      payment_methods: {
-        installments: CHECKOUT_INSTALLMENTS,
-      },
       statement_descriptor: "CLARISSE",
     },
   });
 
-  const initPoint =
-    env.MP_ACCESS_TOKEN.startsWith("TEST-") && preference.sandbox_init_point
-      ? preference.sandbox_init_point
-      : (preference.init_point ?? preference.sandbox_init_point);
+  const initPoint = preference.init_point;
 
   if (!preference.id || !initPoint) {
     console.error(
@@ -432,21 +248,6 @@ export const createMercadoPagoCheckout = async (
     preferenceId: preference.id,
     initPoint,
   };
-};
-
-const getPaymentOrderId = (payment: MercadoPagoPayment) => {
-  const metadata = payment.metadata as
-    | { order_id?: string; order_number?: string }
-    | undefined;
-
-  return payment.external_reference ?? metadata?.order_id ?? null;
-};
-
-const getPaymentApprovedAt = (payment: MercadoPagoPayment) => {
-  if (!payment.date_approved) return new Date();
-
-  const date = new Date(payment.date_approved);
-  return Number.isNaN(date.getTime()) ? new Date() : date;
 };
 
 export const syncMercadoPagoPayment = async (paymentId: string) => {

@@ -4,10 +4,10 @@ import { createEnv } from "@t3-oss/env-nextjs";
 export const env = createEnv({
   shared: {
     NEXT_PUBLIC_APP_URL: z.url(),
+    NEXT_PUBLIC_MP_KEY: z.string().min(1),
   },
   server: {
     DATABASE_URL: z.string().min(1),
-    MP_PUBLIC_KEY: z.string().min(1),
     MP_ACCESS_TOKEN: z.string().min(1),
     MP_WEBHOOK_SECRET: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(1),
@@ -19,10 +19,11 @@ export const env = createEnv({
     S3_IMAGE_HOSTNAME: z.string().min(1),
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_CHAT_MODEL: z.string().min(1).optional(),
+    NGROK_URL: z.url().optional(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
-    MP_PUBLIC_KEY: process.env.MP_PUBLIC_KEY,
+    NEXT_PUBLIC_MP_KEY: process.env.NEXT_PUBLIC_MP_KEY,
     MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN,
     MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
@@ -35,5 +36,6 @@ export const env = createEnv({
     S3_IMAGE_HOSTNAME: process.env.S3_IMAGE_HOSTNAME,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_CHAT_MODEL: process.env.OPENAI_CHAT_MODEL,
+    NGROK_URL: process.env.NGROK_URL,
   },
 });
