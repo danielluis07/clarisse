@@ -237,10 +237,6 @@ export const createMercadoPagoCheckout = async (
 };
 
 export const syncMercadoPagoPayment = async (paymentId: string) => {
-  console.info("Starting Mercado Pago payment sync", {
-    paymentId,
-  });
-
   const payment = await mpPayment.get({ id: paymentId });
   const orderId = getPaymentOrderId(payment);
   const refundedCents = amountToCents(payment.transaction_amount_refunded);
@@ -250,21 +246,6 @@ export const syncMercadoPagoPayment = async (paymentId: string) => {
     refundedCents,
     transactionCents,
   );
-
-  console.info("Loaded Mercado Pago payment for sync", {
-    paymentId,
-    orderId,
-    status: payment.status ?? null,
-    statusDetail: payment.status_detail ?? null,
-    transactionAmountCents: transactionCents,
-    refundedAmountCents: refundedCents,
-    shouldDeductInventory: mapping.shouldDeductInventory,
-    isRefund: mapping.isRefund,
-    isTerminalFailure: mapping.isTerminalFailure,
-    orderStatus: mapping.orderStatus,
-    paymentStatus: mapping.paymentStatus,
-    fulfillmentStatus: mapping.fulfillmentStatus ?? null,
-  });
 
   if (!orderId) {
     console.warn("Mercado Pago payment without order reference", {
@@ -280,11 +261,6 @@ export const syncMercadoPagoPayment = async (paymentId: string) => {
   }
 
   return db.transaction(async (tx) => {
-    console.info("Synchronizing Mercado Pago payment inside transaction", {
-      paymentId,
-      orderId,
-    });
-
     await tx.execute(
       sql`select id from ${orders} where ${orders.id} = ${orderId} for update`,
     );
@@ -339,19 +315,6 @@ export const syncMercadoPagoPayment = async (paymentId: string) => {
     const shouldCountCustomer =
       mapping.shouldDeductInventory && !order.paidAt && order.customerId;
 
-    console.info("Resolved Mercado Pago sync order state", {
-      paymentId,
-      orderId,
-      orderNumber: order.orderNumber,
-      paymentStatus: order.paymentStatus,
-      fulfillmentStatus: order.fulfillmentStatus,
-      paidAt: order.paidAt,
-      inventoryDeductedAt: order.inventoryDeductedAt,
-      shouldDeductInventory: mapping.shouldDeductInventory,
-      shouldCountCustomer: Boolean(shouldCountCustomer),
-      paidAtWillBeSet: Boolean(paidAt),
-    });
-
     if (mapping.shouldDeductInventory && !order.inventoryDeductedAt) {
       const items = await tx
         .select({
@@ -361,13 +324,6 @@ export const syncMercadoPagoPayment = async (paymentId: string) => {
         })
         .from(orderItems)
         .where(eq(orderItems.orderId, order.id));
-
-      console.info("Deducting inventory for Mercado Pago payment", {
-        paymentId,
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        itemCount: items.length,
-      });
 
       for (const item of items) {
         const [updatedVariant] = await tx
@@ -412,22 +368,9 @@ export const syncMercadoPagoPayment = async (paymentId: string) => {
           referenceId: order.id,
         })),
       );
-
-      console.info("Finished inventory deduction for Mercado Pago payment", {
-        paymentId,
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-      });
     }
 
     if (shouldCountCustomer) {
-      console.info("Updating customer totals for Mercado Pago payment", {
-        paymentId,
-        orderId: order.id,
-        customerId: order.customerId,
-        totalCents: order.totalCents,
-      });
-
       await tx
         .update(customers)
         .set({
@@ -467,18 +410,6 @@ export const syncMercadoPagoPayment = async (paymentId: string) => {
         ...(mapping.isRefund ? { refundedAt: now } : {}),
       })
       .where(eq(orders.id, order.id));
-
-    console.info("Updated order from Mercado Pago payment sync", {
-      paymentId,
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      orderStatus: mapping.orderStatus,
-      paymentStatus: mapping.paymentStatus,
-      fulfillmentStatus: mapping.fulfillmentStatus ?? null,
-      inventoryDeducted:
-        mapping.shouldDeductInventory && !order.inventoryDeductedAt,
-      customerCounted: Boolean(shouldCountCustomer),
-    });
 
     return {
       orderId: order.id,
