@@ -70,7 +70,7 @@ import {
   productVariantSelect,
 } from "@/modules/products/queries";
 import { rethrowProductWriteError } from "@/modules/products/errors";
-import { unique } from "@/lib/array-utils";
+import { unique } from "@/lib/utils";
 import { adminProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
 
 const revalidateStorefrontProducts = () => {

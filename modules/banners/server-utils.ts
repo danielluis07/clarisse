@@ -5,7 +5,7 @@ import { inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { banners, mediaAssets } from "@/db/schema";
 import type { BannerRow } from "@/modules/banners/types";
-import { unique } from "@/lib/array-utils";
+import { unique } from "@/lib/utils";
 
 export const bannerSelect = {
   id: banners.id,
