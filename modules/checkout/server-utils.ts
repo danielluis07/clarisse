@@ -175,20 +175,6 @@ export const createMercadoPagoCheckout = async (
         currency_id: "BRL",
         unit_price: centsToMercadoPagoAmount(line.unitPriceCents),
       })),
-      shipments: {
-        mode: "not_specified",
-        cost: centsToMercadoPagoAmount(shippingCents),
-        free_shipping: shippingCents === 0,
-        receiver_address: {
-          zip_code: customer.postalCode,
-          street_name: customer.addressLine1,
-          street_number: customer.number,
-          apartment: customer.addressLine2 ?? undefined,
-          city_name: customer.city,
-          state_name: customer.state,
-          country_name: "Brasil",
-        },
-      },
       payer: {
         name: firstName,
         surname: lastName,
