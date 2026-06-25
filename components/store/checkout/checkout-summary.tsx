@@ -9,10 +9,11 @@ import {
 import { centsToReais } from "@/lib/utils";
 import type { CartItem } from "@/types/cart";
 import { CheckoutLineItem } from "@/components/store/checkout/checkout-line-item";
-
-const FREE_SHIPPING_THRESHOLD_CENTS = 80000;
-const STANDARD_SHIPPING_CENTS = 2900;
-const INSTALLMENTS = 6;
+import {
+  CHECKOUT_INSTALLMENTS,
+  FREE_SHIPPING_THRESHOLD_CENTS,
+  getCheckoutShippingCents,
+} from "@/modules/checkout/constants";
 
 export const CheckoutSummary = ({
   items,
@@ -26,7 +27,7 @@ export const CheckoutSummary = ({
   const subtotalCents = getCartSubtotalCents(items);
   const itemCount = getCartItemCount(items);
   const hasFreeShipping = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
-  const shippingCents = hasFreeShipping ? 0 : STANDARD_SHIPPING_CENTS;
+  const shippingCents = getCheckoutShippingCents(subtotalCents);
   const totalCents = subtotalCents + shippingCents;
   const freeShippingRemaining = Math.max(
     0,
@@ -36,7 +37,7 @@ export const CheckoutSummary = ({
     100,
     Math.round((subtotalCents / FREE_SHIPPING_THRESHOLD_CENTS) * 100),
   );
-  const installmentCents = Math.round(totalCents / INSTALLMENTS);
+  const installmentCents = Math.round(totalCents / CHECKOUT_INSTALLMENTS);
 
   return (
     <aside className="lg:sticky lg:top-28">
@@ -99,7 +100,8 @@ export const CheckoutSummary = ({
             </span>
           </div>
           <p className="mt-1.5 text-right text-[11px] text-foreground/50">
-            Em até {INSTALLMENTS}x de {centsToReais(installmentCents)} sem juros
+            Em até {CHECKOUT_INSTALLMENTS}x de{" "}
+            {centsToReais(installmentCents)} sem juros
           </p>
 
           <button
@@ -114,7 +116,7 @@ export const CheckoutSummary = ({
             ) : (
               <>
                 <Lock className="size-3.5" />
-                Finalizar pedido
+                Ir para pagamento
               </>
             )}
           </button>

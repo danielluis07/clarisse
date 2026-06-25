@@ -109,7 +109,7 @@ export const CheckoutDetailsForm = () => {
           <Field
             label="Endereço"
             id="checkout-address"
-            name="address"
+            name="addressLine1"
             autoComplete="address-line1"
             required
             placeholder="Rua, avenida..."
@@ -127,7 +127,7 @@ export const CheckoutDetailsForm = () => {
           <Field
             label="Complemento"
             id="checkout-complement"
-            name="complement"
+            name="addressLine2"
             autoComplete="address-line2"
             placeholder="Apto, bloco (opcional)"
             className="sm:col-span-3"
@@ -165,40 +165,14 @@ export const CheckoutDetailsForm = () => {
       <Step
         step="03"
         title="Pagamento"
-        hint="A finalização de pagamento ainda está em desenvolvimento.">
+        hint="Você será redirecionada ao Mercado Pago para concluir com segurança.">
         <div className="flex items-start gap-3 border border-dashed border-foreground/25 bg-foreground/[0.02] px-5 py-4 text-sm leading-relaxed text-foreground/65">
           <Lock className="mt-0.5 size-4 shrink-0 text-foreground/45" />
           <p>
-            Este checkout está em modo demonstração. Nenhum dado de cartão é
-            processado e nenhuma cobrança será feita ao finalizar o pedido.
+            Os dados de pagamento são processados pelo Mercado Pago. A Clarisse
+            salva o pedido como pendente e confirma automaticamente quando o
+            pagamento for aprovado.
           </p>
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none mt-5 grid grid-cols-1 gap-4 opacity-50 select-none sm:grid-cols-2">
-          <Field
-            label="Número do cartão"
-            id="checkout-card-number"
-            disabled
-            tabIndex={-1}
-            placeholder="0000 0000 0000 0000"
-            className="sm:col-span-2"
-          />
-          <Field
-            label="Validade"
-            id="checkout-card-expiry"
-            disabled
-            tabIndex={-1}
-            placeholder="MM/AA"
-          />
-          <Field
-            label="CVV"
-            id="checkout-card-cvv"
-            disabled
-            tabIndex={-1}
-            placeholder="123"
-          />
         </div>
       </Step>
     </div>

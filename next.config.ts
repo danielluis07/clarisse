@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  allowedDevOrigins: env.NGROK_URL
+    ? [new URL(env.NGROK_URL).hostname]
+    : undefined,
 };
 
 export default nextConfig;

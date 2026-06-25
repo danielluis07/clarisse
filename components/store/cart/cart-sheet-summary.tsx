@@ -11,8 +11,7 @@ import {
 import { centsToReais } from "@/lib/utils";
 import type { CartItem } from "@/types/cart";
 import { useRouter } from "next/navigation";
-
-const FREE_SHIPPING_THRESHOLD_CENTS = 80000;
+import { FREE_SHIPPING_THRESHOLD_CENTS } from "@/modules/checkout/constants";
 
 export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
   const clearCart = useCartStore((state) => state.clearCart);
