@@ -16,7 +16,7 @@ import { getCurrentSession } from "@/lib/auth-utils";
 import { mpPayment, mpPreference } from "@/lib/mercadopago";
 import { getCheckoutShippingCents } from "@/modules/checkout/constants";
 import { CheckoutError } from "@/modules/checkout/errors";
-import { mapMercadoPagoPaymentStatus } from "@/modules/checkout/payment-status";
+import { mapMercadoPagoPaymentStatus } from "@/modules/checkout/utils";
 import { getCheckoutLines } from "@/modules/checkout/queries";
 import {
   buildShippingAddress,

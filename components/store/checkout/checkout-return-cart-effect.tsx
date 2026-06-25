@@ -9,10 +9,11 @@ export const CheckoutReturnCartEffect = ({
   shouldClear: boolean;
 }) => {
   const clearCart = useCartStore((state) => state.clearCart);
+  const hasHydrated = useCartStore((state) => state.hasHydrated);
 
   useEffect(() => {
-    if (shouldClear) clearCart();
-  }, [clearCart, shouldClear]);
+    if (hasHydrated && shouldClear) clearCart();
+  }, [clearCart, hasHydrated, shouldClear]);
 
   return null;
 };

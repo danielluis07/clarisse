@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mapMercadoPagoPaymentStatus } from "@/modules/checkout/payment-status";
+import { mapMercadoPagoPaymentStatus } from "@/modules/checkout/utils";
 
 describe("Mercado Pago payment status mapping", () => {
   test("maps approved payments to paid orders and inventory deduction", () => {

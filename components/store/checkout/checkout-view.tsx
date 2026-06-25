@@ -33,9 +33,12 @@ export const CheckoutView = () => {
     const formData = new FormData(form);
 
     setIsPlacingOrder(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
     try {
       const response = await fetch("/api/checkout/mercadopago", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
         },
@@ -59,9 +62,10 @@ export const CheckoutView = () => {
         }),
       });
 
-      const data = (await response.json().catch(() => null)) as
-        | { initPoint?: string; message?: string }
-        | null;
+      const data = (await response.json().catch(() => null)) as {
+        initPoint?: string;
+        message?: string;
+      } | null;
 
       if (!response.ok || !data?.initPoint) {
         throw new Error(
@@ -74,10 +78,14 @@ export const CheckoutView = () => {
       setIsPlacingOrder(false);
       toast.error("Não foi possível iniciar o pagamento", {
         description:
-          error instanceof Error
-            ? error.message
-            : "Revise os dados e tente novamente.",
+          error instanceof DOMException && error.name === "AbortError"
+            ? "A conexão demorou mais do que o esperado. Tente novamente."
+            : error instanceof Error
+              ? error.message
+              : "Revise os dados e tente novamente.",
       });
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   };
 
