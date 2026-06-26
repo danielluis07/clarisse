@@ -15,7 +15,13 @@ export const useCreateCheckout = () => {
         if (error.data?.code === "UNAUTHORIZED") {
           toast.error("Você precisa estar logado para finalizar a compra.");
           router.push("/login");
+          return;
         }
+
+        toast.error(
+          error.message ||
+            "Não foi possível iniciar o pagamento. Tente novamente.",
+        );
       },
     }),
   );
