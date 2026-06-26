@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
 import { useCartStore } from "@/hooks/cart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckoutDetailsForm } from "@/components/store/checkout/checkout-details-form";
+import { CheckoutForm } from "@/components/store/checkout/checkout-form";
 import { CheckoutEmpty } from "@/components/store/checkout/checkout-empty";
 import { CheckoutSummary } from "@/components/store/checkout/checkout-summary";
+import { useCreateCheckout } from "@/modules/checkout/hooks";
+import { checkoutCustomerInput } from "@/modules/checkout/validations";
+import { z } from "zod";
+
+type CheckoutFormValues = z.output<typeof checkoutCustomerInput>;
 
 export const CheckoutView = () => {
   const items = useCartStore((state) => state.items);
   const hasHydrated = useCartStore((state) => state.hasHydrated);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const checkoutFormId = "checkout-form";
+  const { mutate, isPending } = useCreateCheckout();
 
   // The cart lives in localStorage, so wait for rehydration before deciding
   // between the empty state and the checkout to avoid an SSR/CSR mismatch.
@@ -25,68 +29,14 @@ export const CheckoutView = () => {
     return <CheckoutEmpty />;
   }
 
-  const handlePlaceOrder = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (isPlacingOrder) return;
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    setIsPlacingOrder(true);
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
-    try {
-      const response = await fetch("/api/checkout/mercadopago", {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customer: {
-            email: formData.get("email"),
-            name: formData.get("name"),
-            postalCode: formData.get("postalCode"),
-            phone: formData.get("phone"),
-            addressLine1: formData.get("addressLine1"),
-            number: formData.get("number"),
-            addressLine2: formData.get("addressLine2"),
-            neighborhood: formData.get("neighborhood"),
-            city: formData.get("city"),
-            state: formData.get("state"),
-          },
-          items: items.map((item) => ({
-            productVariantId: item.productVariantId,
-            quantity: item.quantity,
-          })),
-        }),
-      });
-
-      const data = (await response.json().catch(() => null)) as {
-        initPoint?: string;
-        message?: string;
-      } | null;
-
-      if (!response.ok || !data?.initPoint) {
-        throw new Error(
-          data?.message ?? "Não foi possível iniciar o pagamento.",
-        );
-      }
-
-      window.location.assign(data.initPoint);
-    } catch (error) {
-      setIsPlacingOrder(false);
-      toast.error("Não foi possível iniciar o pagamento", {
-        description:
-          error instanceof DOMException && error.name === "AbortError"
-            ? "A conexão demorou mais do que o esperado. Tente novamente."
-            : error instanceof Error
-              ? error.message
-              : "Revise os dados e tente novamente.",
-      });
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
+  const handlePlaceOrder = async (customer: CheckoutFormValues) => {
+    mutate({
+      items: items.map((item) => ({
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+      })),
+      customer,
+    } as never);
   };
 
   return (
@@ -108,16 +58,22 @@ export const CheckoutView = () => {
           </p>
         </div>
 
-        <form
-          onSubmit={handlePlaceOrder}
-          className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-7">
-            <CheckoutDetailsForm />
+            <CheckoutForm
+              formId={checkoutFormId}
+              isSubmitting={isPending}
+              onSubmit={handlePlaceOrder}
+            />
           </div>
           <div className="lg:col-span-5">
-            <CheckoutSummary items={items} isPlacingOrder={isPlacingOrder} />
+            <CheckoutSummary
+              formId={checkoutFormId}
+              items={items}
+              isPlacingOrder={isPending}
+            />
           </div>
-        </form>
+        </div>
       </div>
     </section>
   );

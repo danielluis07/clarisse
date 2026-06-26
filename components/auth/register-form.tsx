@@ -38,10 +38,7 @@ export const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRepeatPassword, setShowRepeatPassword] = useState(false);
 
-  const {
-    control,
-    handleSubmit,
-  } = useForm<FormValues>({
+  const { control, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(signUpInput),
     defaultValues: {
       name: "",
@@ -63,7 +60,7 @@ export const RegisterForm = () => {
         onSuccess: () => {
           setIsLoading(false);
           toast.success("Conta criada com sucesso!");
-          router.push("/login");
+          router.push("/account");
           router.refresh();
         },
         onError: (ctx) => {
@@ -181,9 +178,7 @@ export const RegisterForm = () => {
                     </button>
                   </div>
                   <FieldError
-                    errors={
-                      fieldState.error ? [fieldState.error] : undefined
-                    }
+                    errors={fieldState.error ? [fieldState.error] : undefined}
                   />
                 </Field>
               )}
@@ -224,9 +219,7 @@ export const RegisterForm = () => {
                     </button>
                   </div>
                   <FieldError
-                    errors={
-                      fieldState.error ? [fieldState.error] : undefined
-                    }
+                    errors={fieldState.error ? [fieldState.error] : undefined}
                   />
                 </Field>
               )}

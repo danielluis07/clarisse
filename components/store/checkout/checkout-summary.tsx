@@ -18,9 +18,11 @@ import {
 export const CheckoutSummary = ({
   items,
   isPlacingOrder,
+  formId = "checkout-form",
 }: {
   items: CartItem[];
   isPlacingOrder: boolean;
+  formId?: string;
 }) => {
   const clearCart = useCartStore((state) => state.clearCart);
 
@@ -100,12 +102,13 @@ export const CheckoutSummary = ({
             </span>
           </div>
           <p className="mt-1.5 text-right text-[11px] text-foreground/50">
-            Em até {CHECKOUT_INSTALLMENTS}x de{" "}
-            {centsToReais(installmentCents)} sem juros
+            Em até {CHECKOUT_INSTALLMENTS}x de {centsToReais(installmentCents)}{" "}
+            sem juros
           </p>
 
           <button
             type="submit"
+            form={formId}
             disabled={isPlacingOrder}
             className="mt-6 flex h-14 w-full items-center justify-center gap-3 bg-foreground px-6 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
             {isPlacingOrder ? (

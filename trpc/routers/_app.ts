@@ -6,11 +6,13 @@ import { categoriesRouter } from "@/trpc/routers/categories";
 import { collectionsRouter } from "@/trpc/routers/collections";
 import { mediaRouter } from "@/trpc/routers/media";
 import { productsRouter } from "@/trpc/routers/products";
+import { checkoutRouter } from "@/trpc/routers/checkout";
 
 export const appRouter = createTRPCRouter({
   banners: bannersRouter,
   customers: customersRouter,
   categories: categoriesRouter,
+  checkout: checkoutRouter,
   collections: collectionsRouter,
   media: mediaRouter,
   products: productsRouter,
