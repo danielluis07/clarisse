@@ -5,20 +5,45 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { AccountSectionHeading } from "@/modules/account/components/account-section-heading";
+import { useGetProfile, useUpdateProfile } from "@/modules/account/hooks";
+import { formatPhoneInput } from "@/lib/utils";
 import type { AccountUser } from "@/modules/account/types";
 
 export const AccountProfile = ({ user }: { user: AccountUser }) => {
-  const [name, setName] = useState(user.name);
-  const [phone, setPhone] = useState("");
-  const [cpf, setCpf] = useState("");
+  const { data: profile, isLoading } = useGetProfile();
+  const updateProfile = useUpdateProfile();
 
-  const isDirty = name !== user.name || phone !== "" || cpf !== "";
+  // Phone is stored as raw digits; only the display value is formatted.
+  const savedPhone = profile?.phone ?? "";
+  const [phone, setPhone] = useState(savedPhone);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  // Hydrate the field when the customer profile loads (or its phone changes),
+  // resetting any unsaved edits — adjusting state during render avoids the
+  // cascading re-render an effect would cause here.
+  const [hydratedPhone, setHydratedPhone] = useState(savedPhone);
+  if (savedPhone !== hydratedPhone) {
+    setHydratedPhone(savedPhone);
+    setPhone(savedPhone);
+  }
+
+  const isDirty = phone !== savedPhone;
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Design only — backend wiring comes later.
-    toast("Edição de dados em breve.");
+    if (!isDirty || updateProfile.isPending) return;
+
+    try {
+      await updateProfile.mutateAsync({ phone: phone || null });
+      toast.success("Dados atualizados.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar os seus dados.",
+      );
+    }
   };
 
   return (
@@ -34,10 +59,10 @@ export const AccountProfile = ({ user }: { user: AccountUser }) => {
           <FieldLabel htmlFor="account-name">Nome completo</FieldLabel>
           <Input
             id="account-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            value={user.name}
             autoComplete="name"
-            placeholder="Seu nome"
+            disabled
+            readOnly
           />
         </Field>
 
@@ -63,22 +88,14 @@ export const AccountProfile = ({ user }: { user: AccountUser }) => {
           <FieldLabel htmlFor="account-phone">Telefone</FieldLabel>
           <Input
             id="account-phone"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            value={formatPhoneInput(phone)}
+            onChange={(event) =>
+              setPhone(event.target.value.replace(/\D/g, "").slice(0, 11))
+            }
             type="tel"
             autoComplete="tel"
             placeholder="(11) 90000-0000"
-          />
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor="account-document">CPF</FieldLabel>
-          <Input
-            id="account-document"
-            value={cpf}
-            onChange={(event) => setCpf(event.target.value)}
-            inputMode="numeric"
-            placeholder="000.000.000-00"
+            disabled={isLoading || updateProfile.isPending}
           />
         </Field>
       </div>
@@ -86,8 +103,9 @@ export const AccountProfile = ({ user }: { user: AccountUser }) => {
       <div className="flex justify-end border-t border-foreground/10 pt-6">
         <button
           type="submit"
-          disabled={!isDirty}
-          className="inline-flex h-12 items-center justify-center bg-foreground px-8 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+          disabled={!isDirty || updateProfile.isPending}
+          className="inline-flex h-12 items-center justify-center gap-2 bg-foreground px-8 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+          {updateProfile.isPending && <Spinner />}
           Salvar alterações
         </button>
       </div>

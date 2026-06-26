@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireUser } from "@/lib/auth-utils";
 import { CheckoutView } from "@/components/store/checkout/checkout-view";
 
 export const metadata: Metadata = {
@@ -9,8 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const CheckoutPage = () => {
-  return <CheckoutView />;
+const CheckoutPage = async () => {
+  const session = await requireUser();
+
+  return <CheckoutView contactEmail={session.user.email} />;
 };
 
 export default CheckoutPage;

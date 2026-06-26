@@ -2,18 +2,34 @@
 
 import { useState } from "react";
 import { MapPin, Plus } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { AccountSectionHeading } from "@/modules/account/components/account-section-heading";
 import { AccountEmpty } from "@/modules/account/components/account-empty";
 import { AddressCard } from "@/modules/account/components/address-card";
 import { AddressFormDialog } from "@/modules/account/components/address-form-dialog";
-import { MOCK_ADDRESSES } from "@/modules/account/constants";
+import { useGetAddresses, useDeleteAddress } from "@/modules/account/hooks";
 import type { AccountAddress } from "@/modules/account/types";
 
 export const AccountAddresses = () => {
-  const addresses = MOCK_ADDRESSES;
+  const { data: addresses, isLoading, isError, refetch } = useGetAddresses();
+  const deleteAddress = useDeleteAddress();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<AccountAddress | null>(
+    null,
+  );
+  const [deletingAddress, setDeletingAddress] = useState<AccountAddress | null>(
     null,
   );
 
@@ -27,6 +43,22 @@ export const AccountAddresses = () => {
     setDialogOpen(true);
   };
 
+  const confirmDelete = async () => {
+    if (!deletingAddress) return;
+
+    try {
+      await deleteAddress.mutateAsync({ id: deletingAddress.id });
+      toast.success("Endereço removido.");
+      setDeletingAddress(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível remover o endereço.",
+      );
+    }
+  };
+
   const addButton = (
     <button
       type="button"
@@ -37,16 +69,35 @@ export const AccountAddresses = () => {
     </button>
   );
 
+  const hasAddresses = (addresses?.length ?? 0) > 0;
+
   return (
     <div className="space-y-8">
       <AccountSectionHeading
         eyebrow="Entrega"
         title="Endereços"
         description="Salve os locais onde você costuma receber as suas peças."
-        action={addresses.length > 0 ? addButton : undefined}
+        action={hasAddresses ? addButton : undefined}
       />
 
-      {addresses.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center border border-dashed border-foreground/15 px-6 py-20 text-foreground/50">
+          <Spinner className="size-5" />
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center justify-center border border-dashed border-foreground/15 px-6 py-20 text-center">
+          <p className="max-w-sm text-sm leading-relaxed text-foreground/60">
+            Não foi possível carregar os seus endereços.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-6"
+            onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      ) : !hasAddresses ? (
         <AccountEmpty
           icon={MapPin}
           title="Você ainda não tem endereços."
@@ -55,11 +106,12 @@ export const AccountAddresses = () => {
         />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          {addresses.map((address) => (
+          {addresses?.map((address) => (
             <AddressCard
               key={address.id}
               address={address}
               onEdit={openEdit}
+              onDelete={setDeletingAddress}
             />
           ))}
         </div>
@@ -70,6 +122,42 @@ export const AccountAddresses = () => {
         onOpenChange={setDialogOpen}
         address={editingAddress}
       />
+
+      <Dialog
+        open={Boolean(deletingAddress)}
+        onOpenChange={(open) => {
+          if (!open && !deleteAddress.isPending) setDeletingAddress(null);
+        }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover endereço</DialogTitle>
+            <DialogDescription>
+              Tem certeza de que deseja remover
+              {deletingAddress?.label
+                ? ` "${deletingAddress.label}"`
+                : " este endereço"}
+              ? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteAddress.isPending}
+              onClick={() => setDeletingAddress(null)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteAddress.isPending}
+              onClick={confirmDelete}>
+              {deleteAddress.isPending && <Spinner />}
+              Remover
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

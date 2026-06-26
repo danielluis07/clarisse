@@ -1,5 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import type { OrderStatus } from "@/modules/checkout/types";
+import type { AppRouter, RouterOutput } from "@/trpc/routers/_app";
+import type { inferRouterInputs } from "@trpc/server";
+
+type RouterInput = inferRouterInputs<AppRouter>;
 
 export type AccountTab = "overview" | "orders" | "profile" | "addresses";
 
@@ -38,16 +42,8 @@ export type AccountOrder = {
   totalCents: number;
 };
 
-export type AccountAddress = {
-  id: string;
-  label: string;
-  recipient: string;
-  line1: string;
-  line2?: string | null;
-  neighborhood: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  phone?: string | null;
-  isDefault: boolean;
-};
+/** A single delivery address as returned by the account router. */
+export type AccountAddress = RouterOutput["account"]["listAddresses"][number];
+
+export type CreateAddressInput = RouterInput["account"]["createAddress"];
+export type UpdateAddressInput = RouterInput["account"]["updateAddress"];

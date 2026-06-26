@@ -1,5 +1,4 @@
 import { env } from "@/lib/env";
-import type { AddressSnapshot } from "@/types/db";
 import type { CreateMercadoPagoCheckoutInput } from "@/modules/checkout/validations";
 import type {
   FulfillmentStatus,
@@ -50,21 +49,6 @@ export const splitBrazilPhone = (phone: string) => {
     number: digits.slice(2),
   };
 };
-
-export const buildShippingAddress = (
-  customer: CreateMercadoPagoCheckoutInput["customer"],
-): AddressSnapshot => ({
-  recipientName: customer.name,
-  phone: customer.phone,
-  country: "BR",
-  postalCode: customer.postalCode,
-  state: customer.state,
-  city: customer.city,
-  neighborhood: customer.neighborhood,
-  addressLine1: customer.addressLine1,
-  addressLine2: customer.addressLine2,
-  number: customer.number,
-});
 
 export const normalizeCheckoutItems = (
   items: CreateMercadoPagoCheckoutInput["items"],

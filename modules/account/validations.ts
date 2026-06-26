@@ -5,8 +5,24 @@ const trimmedString = z.string().trim();
 const optionalTrimmedString = (max = 160) =>
   trimmedString
     .max(max, { message: `O campo deve ter no máximo ${max} caracteres.` })
-    .optional()
+    // `nullish` (not `optional`) so the schema accepts the `null` values the
+    // form emits for empty optional fields and re-validates them server-side.
+    .nullish()
     .transform((value) => (value ? value : null));
+
+const addressId = trimmedString.min(1, { message: "Endereço inválido." });
+
+/**
+ * Brazilian phone with 10 or 11 digits. Accepts an empty value (cleared by the
+ * user) and normalizes it to `null`.
+ */
+const phoneField = trimmedString
+  .regex(/^\d{10,11}$/, {
+    message: "O telefone deve conter 10 ou 11 dígitos.",
+  })
+  .or(z.literal(""))
+  .nullish()
+  .transform((value) => (value ? value : null));
 
 export const accountAddressInput = z.object({
   label: trimmedString
@@ -39,7 +55,6 @@ export const accountAddressInput = z.object({
     .min(2, { message: "O estado deve ter 2 caracteres (sigla)." })
     .max(2, { message: "O estado deve ter 2 caracteres (sigla)." })
     .transform((value) => value.toUpperCase()),
-  phone: optionalTrimmedString(32),
   isDefault: z.boolean({
     error: "O campo isDefault deve ser verdadeiro ou falso.",
   }),
@@ -47,3 +62,19 @@ export const accountAddressInput = z.object({
 
 export type AccountAddressInput = z.input<typeof accountAddressInput>;
 export type AccountAddressOutput = z.output<typeof accountAddressInput>;
+
+export const createAddressInput = accountAddressInput;
+
+export const updateAddressInput = accountAddressInput.extend({
+  id: addressId,
+});
+
+export const deleteAddressInput = z.object({
+  id: addressId,
+});
+
+export const updateProfileInput = z.object({
+  phone: phoneField,
+});
+
+export type UpdateProfileOutput = z.output<typeof updateProfileInput>;

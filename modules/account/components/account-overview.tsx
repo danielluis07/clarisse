@@ -3,7 +3,8 @@
 import { ArrowRight, MapPin, UserRound } from "lucide-react";
 import { AccountSectionHeading } from "@/modules/account/components/account-section-heading";
 import { OrderCard } from "@/modules/account/components/order-card";
-import { MOCK_ADDRESSES, MOCK_ORDERS } from "@/modules/account/constants";
+import { MOCK_ORDERS } from "@/modules/account/constants";
+import { useGetAddresses } from "@/modules/account/hooks";
 import type { AccountTab, AccountUser } from "@/modules/account/types";
 
 const StatCard = ({ value, label }: { value: string; label: string }) => (
@@ -57,13 +58,16 @@ export const AccountOverview = ({
   user: AccountUser;
   onNavigate: (tab: AccountTab) => void;
 }) => {
+  const { data: addresses } = useGetAddresses();
+  const savedAddresses = addresses ?? [];
+
   const totalOrders = MOCK_ORDERS.length;
   const deliveredOrders = MOCK_ORDERS.filter(
     (order) => order.status === "delivered",
   ).length;
   const recentOrder = MOCK_ORDERS[0];
   const defaultAddress =
-    MOCK_ADDRESSES.find((address) => address.isDefault) ?? MOCK_ADDRESSES[0];
+    savedAddresses.find((address) => address.isDefault) ?? savedAddresses[0];
 
   return (
     <div className="space-y-10">
@@ -77,7 +81,7 @@ export const AccountOverview = ({
         <StatCard value={String(totalOrders)} label="Pedidos" />
         <StatCard value={String(deliveredOrders)} label="Entregues" />
         <StatCard
-          value={String(MOCK_ADDRESSES.length)}
+          value={String(savedAddresses.length)}
           label="Endereços salvos"
         />
       </div>
@@ -123,7 +127,8 @@ export const AccountOverview = ({
             </p>
             <p className="mt-2">
               {defaultAddress.line1}
-              {defaultAddress.line2 ? `, ${defaultAddress.line2}` : ""}
+              {defaultAddress.number ? `, ${defaultAddress.number}` : ""}
+              {defaultAddress.line2 ? ` — ${defaultAddress.line2}` : ""}
             </p>
             <p>
               {defaultAddress.city} — {defaultAddress.state} ·{" "}

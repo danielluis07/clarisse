@@ -7,6 +7,7 @@ import { collectionsRouter } from "@/trpc/routers/collections";
 import { mediaRouter } from "@/trpc/routers/media";
 import { productsRouter } from "@/trpc/routers/products";
 import { checkoutRouter } from "@/trpc/routers/checkout";
+import { accountRouter } from "@/trpc/routers/account";
 
 export const appRouter = createTRPCRouter({
   banners: bannersRouter,
@@ -14,6 +15,7 @@ export const appRouter = createTRPCRouter({
   categories: categoriesRouter,
   checkout: checkoutRouter,
   collections: collectionsRouter,
+  account: accountRouter,
   media: mediaRouter,
   products: productsRouter,
 });

@@ -1,10 +1,6 @@
 import { LayoutGrid, MapPin, Package, UserRound } from "lucide-react";
 import type { OrderStatus } from "@/modules/checkout/types";
-import type {
-  AccountAddress,
-  AccountNavItem,
-  AccountOrder,
-} from "@/modules/account/types";
+import type { AccountNavItem, AccountOrder } from "@/modules/account/types";
 
 export const ACCOUNT_NAV: AccountNavItem[] = [
   {
@@ -128,34 +124,5 @@ export const MOCK_ORDERS: AccountOrder[] = [
         quantity: 2,
       },
     ],
-  },
-];
-
-export const MOCK_ADDRESSES: AccountAddress[] = [
-  {
-    id: "addr_1",
-    label: "Casa",
-    recipient: "Clarisse Almeida",
-    line1: "Rua Oscar Freire, 1042",
-    line2: "Apto 121",
-    neighborhood: "Jardins",
-    city: "São Paulo",
-    state: "SP",
-    postalCode: "01426-001",
-    phone: "(11) 98888-0000",
-    isDefault: true,
-  },
-  {
-    id: "addr_2",
-    label: "Trabalho",
-    recipient: "Clarisse Almeida",
-    line1: "Av. Brigadeiro Faria Lima, 3477",
-    line2: "14º andar",
-    neighborhood: "Itaim Bibi",
-    city: "São Paulo",
-    state: "SP",
-    postalCode: "04538-133",
-    phone: "(11) 97777-0000",
-    isDefault: false,
   },
 ];

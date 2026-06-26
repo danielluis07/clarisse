@@ -5,9 +5,11 @@ import type { AccountAddress } from "@/modules/account/types";
 export const AddressCard = ({
   address,
   onEdit,
+  onDelete,
 }: {
   address: AccountAddress;
   onEdit?: (address: AccountAddress) => void;
+  onDelete?: (address: AccountAddress) => void;
 }) => {
   return (
     <article className="flex flex-col border border-foreground/10 bg-background">
@@ -28,15 +30,14 @@ export const AddressCard = ({
         </p>
         <p className="mt-3">
           {address.line1}
-          {address.line2 ? `, ${address.line2}` : ""}
+          {address.number ? `, ${address.number}` : ""}
+          {address.line2 ? ` — ${address.line2}` : ""}
         </p>
         <p>
-          {address.neighborhood} · {address.city} — {address.state}
+          {address.neighborhood ? `${address.neighborhood} · ` : ""}
+          {address.city} — {address.state}
         </p>
         <p>CEP {address.postalCode}</p>
-        {address.phone && (
-          <p className="mt-3 text-foreground/50">{address.phone}</p>
-        )}
       </div>
 
       <div className="flex items-center gap-5 border-t border-foreground/10 px-5 py-3.5">
@@ -49,6 +50,7 @@ export const AddressCard = ({
         </button>
         <button
           type="button"
+          onClick={() => onDelete?.(address)}
           className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-rose-500 transition-colors hover:text-rose-600">
           <Trash2 className="size-3.5" />
           Remover

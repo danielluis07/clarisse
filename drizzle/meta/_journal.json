@@ -57,6 +57,13 @@
       "when": 1782223220084,
       "tag": "0007_furry_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782500106120,
+      "tag": "0008_moaning_venom",
+      "breakpoints": true
     }
   ]
 }

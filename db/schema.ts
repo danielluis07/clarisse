@@ -572,7 +572,6 @@ export const customerAddresses = pgTable(
       .references(() => customers.id, { onDelete: "cascade" }),
     label: text("label"),
     recipientName: text("recipient_name").notNull(),
-    phone: text("phone"),
     country: text("country").notNull().default("BR"),
     postalCode: text("postal_code").notNull(),
     state: text("state").notNull(),
