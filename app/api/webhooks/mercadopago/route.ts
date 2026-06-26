@@ -1,8 +1,5 @@
 import type { NextRequest } from "next/server";
-import {
-  CheckoutError,
-  processMercadoPagoWebhook,
-} from "@/modules/checkout/server-utils";
+import { processMercadoPagoWebhook } from "@/modules/checkout/server-utils";
 import {
   getResourceId,
   getSignatureDataIdCandidates,
@@ -12,6 +9,7 @@ import {
   readWebhookPayload,
   validateMercadoPagoWebhookSignature,
 } from "@/lib/webhook-validation-utils";
+import { CheckoutError } from "@/modules/checkout/errors";
 
 export const runtime = "nodejs";
 

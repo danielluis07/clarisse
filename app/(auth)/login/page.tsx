@@ -22,7 +22,9 @@ const LoginPage = async ({
   });
 
   if (session) {
-    redirect(nextPath ?? (session.user.role === "admin" ? "/admin" : "/"));
+    redirect(
+      nextPath ?? (session.user.role === "admin" ? "/admin" : "/account"),
+    );
   }
 
   return <LoginForm nextPath={nextPath} />;
