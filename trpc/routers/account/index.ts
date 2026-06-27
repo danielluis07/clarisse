@@ -173,7 +173,10 @@ export const accountRouter = createTRPCRouter({
 
       return db.transaction(async (tx) => {
         const [existing] = await tx
-          .select({ id: customerAddresses.id })
+          .select({
+            id: customerAddresses.id,
+            isDefault: customerAddresses.isDefaultShipping,
+          })
           .from(customerAddresses)
           .where(
             and(
@@ -190,8 +193,10 @@ export const accountRouter = createTRPCRouter({
           });
         }
 
+        const isDefaultShipping = existing.isDefault || input.isDefault;
+
         // Clear any other default before promoting this one.
-        if (input.isDefault) {
+        if (isDefaultShipping) {
           await tx
             .update(customerAddresses)
             .set({ isDefaultShipping: false })
@@ -208,7 +213,7 @@ export const accountRouter = createTRPCRouter({
           .update(customerAddresses)
           .set({
             ...toAddressValues(input),
-            isDefaultShipping: input.isDefault,
+            isDefaultShipping,
           })
           .where(
             and(

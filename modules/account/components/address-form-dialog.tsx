@@ -42,7 +42,7 @@ const getDefaultValues = (
   recipient: address?.recipient ?? "",
   postalCode: address?.postalCode ?? "",
   addressLine1: address?.line1 ?? "",
-  number: "",
+  number: address?.number ?? "",
   complement: address?.line2 ?? "",
   neighborhood: address?.neighborhood ?? "",
   city: address?.city ?? "",

@@ -21,7 +21,7 @@ export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
   const subtotalCents = getCartSubtotalCents(items);
   const itemCount = getCartItemCount(items);
   const { useSession } = authClient;
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const freeShippingRemaining = Math.max(
     0,
     FREE_SHIPPING_THRESHOLD_CENTS - subtotalCents,
@@ -62,6 +62,7 @@ export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
       <div className="flex flex-col gap-3">
         <SheetClose asChild>
           <Button
+            disabled={isPending}
             onClick={() => {
               if (!session) {
                 toast.info(

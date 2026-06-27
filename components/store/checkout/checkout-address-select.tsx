@@ -132,7 +132,7 @@ export const CheckoutAddressSelect = ({
 }: {
   contactEmail: string;
   selectedAddressId: string | null;
-  onSelect: (addressId: string) => void;
+  onSelect: (addressId: string | null) => void;
 }) => {
   const { data: addresses, isLoading, isError, refetch } = useGetAddresses();
 
@@ -144,7 +144,10 @@ export const CheckoutAddressSelect = ({
   // Keep a valid address selected: default to the customer's default (or first)
   // address, and recover if the current selection was edited away/deleted.
   useEffect(() => {
-    if (!addresses || addresses.length === 0) return;
+    if (!addresses || addresses.length === 0) {
+      if (selectedAddressId !== null) onSelect(null);
+      return;
+    }
 
     const stillExists = addresses.some(
       (address) => address.id === selectedAddressId,
