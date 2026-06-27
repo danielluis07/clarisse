@@ -1,11 +1,17 @@
 import { db } from "@/db";
-import { cartItems, carts, customers, orderItems, orders } from "@/db/schema";
+import {
+  cartItems,
+  carts,
+  customerAddresses,
+  customers,
+  orderItems,
+  orders,
+} from "@/db/schema";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createMercadoPagoCheckoutInput } from "@/modules/checkout/validations";
 import { getCheckoutShippingCents } from "@/modules/checkout/constants";
 import {
-  buildShippingAddress,
   centsToMercadoPagoAmount,
   generateOrderNumber,
   getCheckoutAppUrl,
@@ -15,54 +21,90 @@ import {
 import { CheckoutError } from "@/modules/checkout/errors";
 import { mpPreference } from "@/lib/mercadopago";
 import { getCheckoutLines } from "@/modules/checkout/server-utils";
+import type { AddressSnapshot } from "@/types/db";
 
 export const checkoutRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createMercadoPagoCheckoutInput)
     .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.user.id;
+
+      // The customer already exists at this point — it was created when the
+      // user saved their first address — so we resolve it instead of inserting.
+      const [customer] = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          email: customers.email,
+          phone: customers.phone,
+        })
+        .from(customers)
+        .where(eq(customers.userId, userId))
+        .limit(1);
+
+      if (!customer) {
+        throw new CheckoutError(
+          "Cadastre um endereço de entrega antes de finalizar a compra.",
+          422,
+        );
+      }
+
+      // Load the chosen address scoped to the customer so a user can never
+      // check out against someone else's address.
+      const [address] = await db
+        .select({
+          recipientName: customerAddresses.recipientName,
+          country: customerAddresses.country,
+          postalCode: customerAddresses.postalCode,
+          state: customerAddresses.state,
+          city: customerAddresses.city,
+          neighborhood: customerAddresses.neighborhood,
+          addressLine1: customerAddresses.addressLine1,
+          addressLine2: customerAddresses.addressLine2,
+          number: customerAddresses.number,
+        })
+        .from(customerAddresses)
+        .where(
+          and(
+            eq(customerAddresses.id, input.addressId),
+            eq(customerAddresses.customerId, customer.id),
+          ),
+        )
+        .limit(1);
+
+      if (!address) {
+        throw new CheckoutError("Endereço de entrega não encontrado.", 404);
+      }
+
       const lines = await getCheckoutLines(input.items);
 
-      const customer = input.customer;
       const subtotalCents = lines.reduce(
         (total, line) => total + line.lineTotalCents,
         0,
       );
       const shippingCents = getCheckoutShippingCents(subtotalCents);
       const totalCents = subtotalCents + shippingCents;
-      const shippingAddress = buildShippingAddress(customer);
-      const userId = ctx.auth.user.id;
+
+      const phone = customer.phone ?? null;
+      const shippingAddress: AddressSnapshot = {
+        recipientName: address.recipientName,
+        phone,
+        country: address.country,
+        postalCode: address.postalCode,
+        state: address.state,
+        city: address.city,
+        neighborhood: address.neighborhood,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        number: address.number,
+      };
 
       const createdOrder = await db.transaction(async (tx) => {
-        const [customerRow] = await tx
-          .insert(customers)
-          .values({
-            userId,
-            name: customer.name,
-            email: customer.email,
-            phone: customer.phone,
-          })
-          .onConflictDoUpdate({
-            target: customers.email,
-            set: {
-              name: customer.name,
-              phone: customer.phone,
-              userId: sql`coalesce(${customers.userId}, excluded.user_id)`,
-              updatedAt: new Date(),
-            },
-          })
-          .returning({
-            id: customers.id,
-          });
-
-        if (!customerRow) {
-          throw new CheckoutError("Não foi possível salvar o cliente.", 500);
-        }
-
         const [cart] = await tx
           .insert(carts)
           .values({
             userId,
-            customerId: customerRow.id,
+            customerId: customer.id,
             status: "converted",
             email: customer.email,
             currency: "BRL",
@@ -94,7 +136,7 @@ export const checkoutRouter = createTRPCRouter({
           .values({
             orderNumber: generateOrderNumber(),
             userId,
-            customerId: customerRow.id,
+            customerId: customer.id,
             cartId: cart.id,
             status: "pending",
             paymentStatus: "pending",
@@ -102,7 +144,7 @@ export const checkoutRouter = createTRPCRouter({
             paymentProvider: "mercadopago",
             customerName: customer.name,
             customerEmail: customer.email,
-            customerPhone: customer.phone,
+            customerPhone: phone,
             currency: "BRL",
             subtotalCents,
             discountCents: 0,
@@ -158,11 +200,11 @@ export const checkoutRouter = createTRPCRouter({
             name: firstName,
             surname: lastName,
             email: customer.email,
-            phone: splitBrazilPhone(customer.phone),
+            phone: splitBrazilPhone(phone ?? ""),
             address: {
-              zip_code: customer.postalCode,
-              street_name: customer.addressLine1,
-              street_number: customer.number,
+              zip_code: address.postalCode,
+              street_name: address.addressLine1,
+              street_number: address.number ?? undefined,
             },
           },
           back_urls: {

@@ -18,11 +18,13 @@ import {
 export const CheckoutSummary = ({
   items,
   isPlacingOrder,
-  formId = "checkout-form",
+  canPlaceOrder,
+  onPlaceOrder,
 }: {
   items: CartItem[];
   isPlacingOrder: boolean;
-  formId?: string;
+  canPlaceOrder: boolean;
+  onPlaceOrder: () => void;
 }) => {
   const clearCart = useCartStore((state) => state.clearCart);
 
@@ -107,9 +109,9 @@ export const CheckoutSummary = ({
           </p>
 
           <button
-            type="submit"
-            form={formId}
-            disabled={isPlacingOrder}
+            type="button"
+            onClick={onPlaceOrder}
+            disabled={isPlacingOrder || !canPlaceOrder}
             className="mt-6 flex h-14 w-full items-center justify-center gap-3 bg-foreground px-6 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
             {isPlacingOrder ? (
               <>

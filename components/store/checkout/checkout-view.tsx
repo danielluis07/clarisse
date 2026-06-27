@@ -1,22 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+
 import { useCartStore } from "@/hooks/cart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckoutForm } from "@/components/store/checkout/checkout-form";
+import { CheckoutAddressSelect } from "@/components/store/checkout/checkout-address-select";
 import { CheckoutEmpty } from "@/components/store/checkout/checkout-empty";
 import { CheckoutSummary } from "@/components/store/checkout/checkout-summary";
 import { useCreateCheckout } from "@/modules/checkout/hooks";
-import { checkoutCustomerInput } from "@/modules/checkout/validations";
-import { z } from "zod";
 
-type CheckoutFormValues = z.output<typeof checkoutCustomerInput>;
-
-export const CheckoutView = () => {
+export const CheckoutView = ({ contactEmail }: { contactEmail: string }) => {
   const items = useCartStore((state) => state.items);
   const hasHydrated = useCartStore((state) => state.hasHydrated);
-  const checkoutFormId = "checkout-form";
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
   const { mutate, isPending } = useCreateCheckout();
 
   // The cart lives in localStorage, so wait for rehydration before deciding
@@ -29,14 +30,19 @@ export const CheckoutView = () => {
     return <CheckoutEmpty />;
   }
 
-  const handlePlaceOrder = async (customer: CheckoutFormValues) => {
+  const handlePlaceOrder = () => {
+    if (!selectedAddressId) {
+      toast.error("Selecione um endereço de entrega.");
+      return;
+    }
+
     mutate({
+      addressId: selectedAddressId,
       items: items.map((item) => ({
         productVariantId: item.productVariantId,
         quantity: item.quantity,
       })),
-      customer,
-    } as never);
+    });
   };
 
   return (
@@ -53,24 +59,25 @@ export const CheckoutView = () => {
             Finalizar compra
           </h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-foreground/60">
-            Revise as suas peças e informe os dados de entrega para concluir o
+            Revise as suas peças e escolha o endereço de entrega para concluir o
             pedido.
           </p>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-7">
-            <CheckoutForm
-              formId={checkoutFormId}
-              isSubmitting={isPending}
-              onSubmit={handlePlaceOrder}
+            <CheckoutAddressSelect
+              contactEmail={contactEmail}
+              selectedAddressId={selectedAddressId}
+              onSelect={setSelectedAddressId}
             />
           </div>
           <div className="lg:col-span-5">
             <CheckoutSummary
-              formId={checkoutFormId}
               items={items}
               isPlacingOrder={isPending}
+              canPlaceOrder={Boolean(selectedAddressId)}
+              onPlaceOrder={handlePlaceOrder}
             />
           </div>
         </div>
@@ -90,9 +97,8 @@ const CheckoutSkeleton = () => {
         <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="space-y-6 lg:col-span-7">
             <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-44 w-full" />
+            <Skeleton className="h-44 w-full" />
           </div>
           <div className="lg:col-span-5">
             <Skeleton className="h-96 w-full" />

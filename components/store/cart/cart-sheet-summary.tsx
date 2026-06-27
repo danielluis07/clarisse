@@ -11,13 +11,17 @@ import {
 import { centsToReais } from "@/lib/utils";
 import type { CartItem } from "@/types/cart";
 import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import { FREE_SHIPPING_THRESHOLD_CENTS } from "@/modules/checkout/constants";
+import { toast } from "sonner";
 
 export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
   const clearCart = useCartStore((state) => state.clearCart);
   const router = useRouter();
   const subtotalCents = getCartSubtotalCents(items);
   const itemCount = getCartItemCount(items);
+  const { useSession } = authClient;
+  const { data: session, isPending } = useSession();
   const freeShippingRemaining = Math.max(
     0,
     FREE_SHIPPING_THRESHOLD_CENTS - subtotalCents,
@@ -58,7 +62,15 @@ export const CartSheetSummary = ({ items }: { items: CartItem[] }) => {
       <div className="flex flex-col gap-3">
         <SheetClose asChild>
           <Button
+            disabled={isPending}
             onClick={() => {
+              if (!session) {
+                toast.info(
+                  "Você precisa estar logado para finalizar a compra.",
+                );
+                router.push("/login?next=/checkout");
+                return;
+              }
               router.push("/checkout");
             }}
             className="flex h-12 items-center justify-center bg-foreground px-6 text-[11px] uppercase tracking-[0.24em] text-background transition-opacity hover:opacity-90">
