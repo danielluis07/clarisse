@@ -64,6 +64,9 @@ export const getProductFormDefaultValues = (
   material: product?.material ?? "",
   fit: product?.fit ?? "",
   careInstructions: product?.careInstructions ?? "",
+  heightCm: product?.heightCm == null ? "" : String(product.heightCm),
+  widthCm: product?.widthCm == null ? "" : String(product.widthCm),
+  lengthCm: product?.lengthCm == null ? "" : String(product.lengthCm),
   seoTitle: product?.seoTitle ?? "",
   seoDescription: product?.seoDescription ?? "",
   variants: product?.variants.length
@@ -135,6 +138,9 @@ export const buildProductPayload = (
   material: toNullableText(values.material),
   fit: toNullableText(values.fit),
   careInstructions: toNullableText(values.careInstructions),
+  heightCm: values.heightCm,
+  widthCm: values.widthCm,
+  lengthCm: values.lengthCm,
   seoTitle: toNullableText(values.seoTitle),
   seoDescription: toNullableText(values.seoDescription),
   variants: values.variants.map((variant, index) => ({

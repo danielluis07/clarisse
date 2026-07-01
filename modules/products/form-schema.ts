@@ -124,6 +124,9 @@ export const productFormSchema = z
     material: optionalText(500, "Material"),
     fit: optionalText(500, "Modelagem"),
     careInstructions: optionalText(1000, "Cuidados"),
+    heightCm: optionalInteger("Altura"),
+    widthCm: optionalInteger("Largura"),
+    lengthCm: optionalInteger("Comprimento"),
     seoTitle: optionalText(160, "Título SEO"),
     seoDescription: optionalText(300, "Descrição SEO"),
     variants: z

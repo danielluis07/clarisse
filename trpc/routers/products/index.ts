@@ -956,6 +956,9 @@ export const productsRouter = createTRPCRouter({
               material: input.material ?? null,
               fit: input.fit ?? null,
               careInstructions: input.careInstructions ?? null,
+              heightCm: input.heightCm ?? null,
+              widthCm: input.widthCm ?? null,
+              lengthCm: input.lengthCm ?? null,
               seoTitle: input.seoTitle ?? null,
               seoDescription: input.seoDescription ?? null,
               publishedAt: input.status === "active" ? new Date() : null,
@@ -1081,6 +1084,15 @@ export const productsRouter = createTRPCRouter({
               ...(values.fit !== undefined ? { fit: values.fit } : {}),
               ...(values.careInstructions !== undefined
                 ? { careInstructions: values.careInstructions }
+                : {}),
+              ...(values.heightCm !== undefined
+                ? { heightCm: values.heightCm }
+                : {}),
+              ...(values.widthCm !== undefined
+                ? { widthCm: values.widthCm }
+                : {}),
+              ...(values.lengthCm !== undefined
+                ? { lengthCm: values.lengthCm }
                 : {}),
               ...(values.seoTitle !== undefined
                 ? { seoTitle: values.seoTitle }

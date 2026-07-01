@@ -8,6 +8,7 @@ import { mediaRouter } from "@/trpc/routers/media";
 import { productsRouter } from "@/trpc/routers/products";
 import { checkoutRouter } from "@/trpc/routers/checkout";
 import { accountRouter } from "@/trpc/routers/account";
+import { shippingRouter } from "@/trpc/routers/shipping";
 
 export const appRouter = createTRPCRouter({
   banners: bannersRouter,
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   account: accountRouter,
   media: mediaRouter,
   products: productsRouter,
+  shipping: shippingRouter,
 });
 
 export type AppRouter = typeof appRouter;

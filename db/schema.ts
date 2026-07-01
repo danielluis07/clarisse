@@ -272,6 +272,36 @@ export const storeSettings = pgTable("store_settings", {
   currency: text("currency").notNull().default("BRL"),
   country: text("country").notNull().default("BR"),
   defaultShippingInfo: text("default_shipping_info"),
+  // --- Shipping origin / sender (used by Melhor Envio quotes and labels) ---
+  originPostalCode: text("origin_postal_code"),
+  senderName: text("sender_name"),
+  senderDocument: text("sender_document"),
+  senderPhone: text("sender_phone"),
+  senderEmail: text("sender_email"),
+  senderAddressLine1: text("sender_address_line_1"),
+  senderNumber: text("sender_number"),
+  senderComplement: text("sender_complement"),
+  senderNeighborhood: text("sender_neighborhood"),
+  senderCity: text("sender_city"),
+  senderState: text("sender_state"),
+  // --- Default package (fallback when a product has no dimensions) ---
+  defaultPackageHeightCm: integer("default_package_height_cm")
+    .notNull()
+    .default(4),
+  defaultPackageWidthCm: integer("default_package_width_cm")
+    .notNull()
+    .default(12),
+  defaultPackageLengthCm: integer("default_package_length_cm")
+    .notNull()
+    .default(17),
+  defaultPackageWeightGrams: integer("default_package_weight_grams")
+    .notNull()
+    .default(300),
+  // --- Free shipping rule (configurable) ---
+  freeShippingEnabled: boolean("free_shipping_enabled").notNull().default(true),
+  freeShippingThresholdCents: integer("free_shipping_threshold_cents")
+    .notNull()
+    .default(80000),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
   ...timestamps(),
@@ -357,6 +387,12 @@ export const products = pgTable(
     material: text("material"),
     fit: text("fit"),
     careInstructions: text("care_instructions"),
+    // Package dimensions in centimeters, used for shipping quotes (Melhor
+    // Envio). Weight is per-variant (`productVariants.weightGrams`). Nullable:
+    // when absent the shipping module falls back to the store default package.
+    heightCm: integer("height_cm"),
+    widthCm: integer("width_cm"),
+    lengthCm: integer("length_cm"),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
@@ -390,6 +426,18 @@ export const products = pgTable(
     check(
       "products_cost_cents_non_negative",
       sql`${table.costCents} is null or ${table.costCents} >= 0`,
+    ),
+    check(
+      "products_height_cm_positive",
+      sql`${table.heightCm} is null or ${table.heightCm} > 0`,
+    ),
+    check(
+      "products_width_cm_positive",
+      sql`${table.widthCm} is null or ${table.widthCm} > 0`,
+    ),
+    check(
+      "products_length_cm_positive",
+      sql`${table.lengthCm} is null or ${table.lengthCm} > 0`,
     ),
   ],
 );
@@ -768,6 +816,16 @@ export const orders = pgTable(
       .$type<AddressSnapshot>()
       .notNull(),
     billingAddress: jsonb("billing_address").$type<AddressSnapshot>(),
+    // --- Shipping / fulfillment (Melhor Envio — populated in Phase 2) ---
+    shippingProvider: text("shipping_provider"),
+    shippingServiceId: integer("shipping_service_id"),
+    shippingServiceName: text("shipping_service_name"),
+    shippingCompanyName: text("shipping_company_name"),
+    melhorEnvioOrderId: text("melhor_envio_order_id"),
+    melhorEnvioProtocol: text("melhor_envio_protocol"),
+    trackingCode: text("tracking_code"),
+    labelUrl: text("label_url"),
+    shippingStatus: text("shipping_status"),
     notes: text("notes"),
     placedAt: timestamp("placed_at", { withTimezone: true })
       .defaultNow()
@@ -796,6 +854,9 @@ export const orders = pgTable(
     index("orders_fulfillment_status_idx").on(table.fulfillmentStatus),
     index("orders_payment_provider_idx").on(table.paymentProvider),
     index("orders_created_at_idx").on(table.createdAt),
+    uniqueIndex("orders_melhor_envio_order_id_idx")
+      .on(table.melhorEnvioOrderId)
+      .where(sql`${table.melhorEnvioOrderId} is not null`),
     check(
       "orders_subtotal_cents_non_negative",
       sql`${table.subtotalCents} >= 0`,
@@ -944,6 +1005,50 @@ export const paymentWebhookEvents = pgTable(
       table.resourceId,
     ),
     index("payment_webhook_events_processed_at_idx").on(table.processedAt),
+  ],
+);
+
+// ============================================================================
+// MELHOR ENVIO (SHIPPING)
+// ============================================================================
+
+/**
+ * Single-row table (id defaults to "melhor_envio") storing the OAuth tokens for
+ * the connected Melhor Envio account. The shipping module reads/refreshes these
+ * automatically, so the store owner only authorizes once.
+ */
+export const melhorEnvioIntegration = pgTable("melhor_envio_integration", {
+  id: text("id").primaryKey().default("melhor_envio"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  scope: text("scope"),
+  environment: text("environment").notNull().default("sandbox"),
+  accountName: text("account_name"),
+  connectedAt: timestamp("connected_at", { withTimezone: true }),
+  ...timestamps(),
+});
+
+/**
+ * Inbound Melhor Envio webhook events (tracking/order status). Mirrors the
+ * idempotency pattern of `paymentWebhookEvents`.
+ */
+export const melhorEnvioWebhookEvents = pgTable(
+  "melhor_envio_webhook_events",
+  {
+    id: id(),
+    event: text("event").notNull(),
+    providerOrderId: text("provider_order_id"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    processingError: text("processing_error"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("melhor_envio_webhook_events_order_idx").on(table.providerOrderId),
+    index("melhor_envio_webhook_events_processed_at_idx").on(table.processedAt),
   ],
 );
 

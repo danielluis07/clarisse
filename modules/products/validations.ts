@@ -67,6 +67,17 @@ const moneyCents = (field: string) =>
 const optionalMoneyCents = (field: string) =>
   moneyCents(field).nullable().optional();
 
+// Package dimension in centimeters (for shipping quotes). Optional: falls back
+// to the store default package when absent.
+const optionalDimensionCm = (field: string) =>
+  z
+    .number()
+    .int(`${field} deve ser um número inteiro`)
+    .min(1, `${field} deve ser maior que zero`)
+    .max(105, `${field} excede o limite das transportadoras`)
+    .nullable()
+    .optional();
+
 const currencySchema = z
   .string()
   .trim()
@@ -298,6 +309,9 @@ const productBaseFields = z.object({
     1000,
     "Cuidados devem ter no máximo 1000 caracteres",
   ),
+  heightCm: optionalDimensionCm("Altura"),
+  widthCm: optionalDimensionCm("Largura"),
+  lengthCm: optionalDimensionCm("Comprimento"),
   seoTitle: optionalText(160, "Título SEO deve ter no máximo 160 caracteres"),
   seoDescription: optionalText(
     300,
@@ -353,6 +367,9 @@ const productUpdateFieldsBase = z.object({
     1000,
     "Cuidados devem ter no máximo 1000 caracteres",
   ),
+  heightCm: optionalDimensionCm("Altura"),
+  widthCm: optionalDimensionCm("Largura"),
+  lengthCm: optionalDimensionCm("Comprimento"),
   seoTitle: optionalText(160, "Título SEO deve ter no máximo 160 caracteres"),
   seoDescription: optionalText(
     300,

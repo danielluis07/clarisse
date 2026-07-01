@@ -11,7 +11,6 @@ export const env = createEnv({
     MP_ACCESS_TOKEN: z.string().min(1),
     MP_WEBHOOK_SECRET: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(1),
-    BETTER_AUTH_URL: z.url(),
     AWS_REGION: z.string().min(1),
     AWS_ACCESS_KEY_ID: z.string().min(1),
     AWS_SECRET_ACCESS_KEY: z.string().min(1),
@@ -20,6 +19,19 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_CHAT_MODEL: z.string().min(1).optional(),
     NGROK_URL: z.url().optional(),
+    // --- Melhor Envio (shipping) ---
+    // Optional so the app boots before the integration is configured. The
+    // shipping module raises a friendly error when a feature needs a value
+    // that is still missing.
+    MELHOR_ENVIO_CLIENT_ID: z.string().min(1).optional(),
+    MELHOR_ENVIO_CLIENT_SECRET: z.string().min(1).optional(),
+    MELHOR_ENVIO_ENVIRONMENT: z
+      .enum(["sandbox", "production"])
+      .default("sandbox"),
+    // Both are required by Melhor Envio in the mandatory `User-Agent` header
+    // (e.g. "Clarisse (contato@clarisse.com.br)").
+    MELHOR_ENVIO_APP_NAME: z.string().min(1).optional(),
+    MELHOR_ENVIO_CONTACT_EMAIL: z.email().optional(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -27,7 +39,6 @@ export const env = createEnv({
     MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN,
     MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     AWS_REGION: process.env.AWS_REGION,
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
@@ -37,5 +48,10 @@ export const env = createEnv({
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_CHAT_MODEL: process.env.OPENAI_CHAT_MODEL,
     NGROK_URL: process.env.NGROK_URL,
+    MELHOR_ENVIO_CLIENT_ID: process.env.MELHOR_ENVIO_CLIENT_ID,
+    MELHOR_ENVIO_CLIENT_SECRET: process.env.MELHOR_ENVIO_CLIENT_SECRET,
+    MELHOR_ENVIO_ENVIRONMENT: process.env.MELHOR_ENVIO_ENVIRONMENT,
+    MELHOR_ENVIO_APP_NAME: process.env.MELHOR_ENVIO_APP_NAME,
+    MELHOR_ENVIO_CONTACT_EMAIL: process.env.MELHOR_ENVIO_CONTACT_EMAIL,
   },
 });

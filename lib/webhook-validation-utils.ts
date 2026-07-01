@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { CheckoutError } from "@/modules/checkout/errors";
 import { MercadoPagoWebhookPayload } from "@/types/mercadopago";
 import type { NextRequest } from "next/server";
@@ -173,3 +174,35 @@ export const validateMercadoPagoWebhookSignature = ({
 };
 
 export { InvalidWebhookSignatureError };
+
+// ---------------------------------------------------------------------------
+// Melhor Envio
+// ---------------------------------------------------------------------------
+
+const safeEqual = (a: string, b: string) => {
+  const bufferA = Buffer.from(a);
+  const bufferB = Buffer.from(b);
+  if (bufferA.length !== bufferB.length) return false;
+  return timingSafeEqual(bufferA, bufferB);
+};
+
+/**
+ * Validate the `X-ME-Signature` header: HMAC-SHA256 of the raw request body
+ * using the application secret (client secret) as the key. The encoding of
+ * `X-ME-Signature` is not strictly documented; accept both the hex and
+ * base64 representations of the digest.
+ */
+export const isValidMelhorEnvioSignature = (
+  rawBody: string,
+  signature: string | null,
+) => {
+  const secret = env.MELHOR_ENVIO_CLIENT_SECRET;
+  if (!secret || !signature) return false;
+
+  const hexDigest = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const base64Digest = createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("base64");
+
+  return safeEqual(hexDigest, signature) || safeEqual(base64Digest, signature);
+};

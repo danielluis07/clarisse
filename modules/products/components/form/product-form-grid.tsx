@@ -526,6 +526,60 @@ export const ProductFormGrid = ({
 
       <Card>
         <CardHeader className="border-b">
+          <CardTitle className="font-admin">Dimensões para envio</CardTitle>
+          <CardDescription>
+            Tamanho da embalagem em centímetros, usado no cálculo de frete
+            (Melhor Envio). O peso é definido por variante. Deixe em branco para
+            usar a embalagem padrão das configurações de envio.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {(
+                [
+                  { name: "heightCm", label: "Altura (cm)", placeholder: "4" },
+                  { name: "widthCm", label: "Largura (cm)", placeholder: "12" },
+                  {
+                    name: "lengthCm",
+                    label: "Comprimento (cm)",
+                    placeholder: "17",
+                  },
+                ] as const
+              ).map(({ name, label, placeholder }) => (
+                <Controller
+                  key={name}
+                  control={control}
+                  name={name}
+                  render={({ field: { value, ...field } }) => (
+                    <Field data-invalid={!!errors[name]}>
+                      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+                      <Input
+                        id={name}
+                        type="number"
+                        min="1"
+                        step="1"
+                        inputMode="numeric"
+                        placeholder={placeholder}
+                        aria-invalid={!!errors[name]}
+                        disabled={isSubmitting}
+                        value={(value as string) ?? ""}
+                        {...field}
+                      />
+                      <FieldError
+                        errors={errors[name] ? [errors[name]!] : undefined}
+                      />
+                    </Field>
+                  )}
+                />
+              ))}
+            </div>
+          </FieldGroup>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="border-b">
           <CardTitle className="font-admin">SEO</CardTitle>
           <CardDescription>
             Metadados para páginas de produto e compartilhamento.
