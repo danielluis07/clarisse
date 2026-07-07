@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getStoreCategories } from "@/modules/categories/storefront";
+import { getStoreCategories } from "@/modules/categories/server/storefront";
 import type {
   StoreCategoryImage,
   StoreCategory,

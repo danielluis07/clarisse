@@ -5,7 +5,7 @@ import {
   getCollectionDescription,
   getCollectionEyebrow,
   getCollectionImage,
-} from "@/components/store/collections/collection-utils";
+} from "@/modules/collections/components/collection-utils";
 
 const makeStoreCollection = (
   overrides: Partial<StoreCollection> = {},

@@ -2,12 +2,12 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { requireAdmin } from "@/lib/auth-utils";
-import { ProductsView } from "@/modules/products/components/products-view";
+import { ProductsView } from "@/modules/products/components/admin/products-view";
 import {
   prefetchProductFormOptions,
   prefetchProducts,
-} from "@/modules/products/prefetch";
-import { parseProductsSearchParams } from "@/modules/products/utils";
+} from "@/modules/products/server/prefetch";
+import { parseProductsSearchParams } from "@/modules/products/params";
 import { HydrateClient } from "@/trpc/server";
 
 const ProductsPage = async ({

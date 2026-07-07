@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { PAGINATION } from "@/constants";
-import { isoDate } from "@/validations";
+import { isoDate } from "@/lib/validations";
 
 export const bannerPlacements = [
   "home_hero",
@@ -41,7 +41,7 @@ const optionalCtaUrl = z
   .refine(
     (value) =>
       !value ||
-    (value.startsWith("/") && !value.startsWith("//")) ||
+      (value.startsWith("/") && !value.startsWith("//")) ||
       value.startsWith("https://") ||
       value.startsWith("http://"),
     "URL do CTA deve ser relativa ou começar com http:// ou https://",
@@ -59,38 +59,37 @@ const focalCoord = z
   .max(100, "Ponto focal deve estar entre 0 e 100")
   .default(50);
 
-const bannerBaseInput = z
-  .object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "Título do banner é obrigatório")
-      .max(160, "Título do banner deve ter no máximo 160 caracteres"),
-    subtitle: optionalText,
-    description: z
-      .string()
-      .trim()
-      .max(1000, "Descrição deve ter no máximo 1000 caracteres")
-      .transform((value) => value || null)
-      .nullable()
-      .optional(),
-    imageId: optionalText,
-    mobileImageId: optionalText,
-    ctaLabel: z
-      .string()
-      .trim()
-      .max(80, "Texto do CTA deve ter no máximo 80 caracteres")
-      .transform((value) => value || null)
-      .nullable()
-      .optional(),
-    ctaUrl: optionalCtaUrl,
-    placement: bannerPlacementSchema,
-    status: contentStatusSchema.default("draft"),
-    focalX: focalCoord,
-    focalY: focalCoord,
-    mobileFocalX: focalCoord,
-    mobileFocalY: focalCoord,
-  });
+const bannerBaseInput = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Título do banner é obrigatório")
+    .max(160, "Título do banner deve ter no máximo 160 caracteres"),
+  subtitle: optionalText,
+  description: z
+    .string()
+    .trim()
+    .max(1000, "Descrição deve ter no máximo 1000 caracteres")
+    .transform((value) => value || null)
+    .nullable()
+    .optional(),
+  imageId: optionalText,
+  mobileImageId: optionalText,
+  ctaLabel: z
+    .string()
+    .trim()
+    .max(80, "Texto do CTA deve ter no máximo 80 caracteres")
+    .transform((value) => value || null)
+    .nullable()
+    .optional(),
+  ctaUrl: optionalCtaUrl,
+  placement: bannerPlacementSchema,
+  status: contentStatusSchema.default("draft"),
+  focalX: focalCoord,
+  focalY: focalCoord,
+  mobileFocalX: focalCoord,
+  mobileFocalY: focalCoord,
+});
 
 export const listBannersInput = z
   .object({
@@ -124,39 +123,38 @@ export const getBannerInput = z.object({
 
 export const createBannerInput = bannerBaseInput;
 
-export const bannerUpdateFields = z
-  .object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "Título do banner é obrigatório")
-      .max(160, "Título do banner deve ter no máximo 160 caracteres")
-      .optional(),
-    subtitle: optionalText,
-    description: z
-      .string()
-      .trim()
-      .max(1000, "Descrição deve ter no máximo 1000 caracteres")
-      .transform((value) => value || null)
-      .nullable()
-      .optional(),
-    imageId: optionalText,
-    mobileImageId: optionalText,
-    ctaLabel: z
-      .string()
-      .trim()
-      .max(80, "Texto do CTA deve ter no máximo 80 caracteres")
-      .transform((value) => value || null)
-      .nullable()
-      .optional(),
-    ctaUrl: optionalCtaUrl,
-    placement: bannerPlacementSchema.optional(),
-    status: contentStatusSchema.optional(),
-    focalX: focalCoord.optional(),
-    focalY: focalCoord.optional(),
-    mobileFocalX: focalCoord.optional(),
-    mobileFocalY: focalCoord.optional(),
-  });
+export const bannerUpdateFields = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Título do banner é obrigatório")
+    .max(160, "Título do banner deve ter no máximo 160 caracteres")
+    .optional(),
+  subtitle: optionalText,
+  description: z
+    .string()
+    .trim()
+    .max(1000, "Descrição deve ter no máximo 1000 caracteres")
+    .transform((value) => value || null)
+    .nullable()
+    .optional(),
+  imageId: optionalText,
+  mobileImageId: optionalText,
+  ctaLabel: z
+    .string()
+    .trim()
+    .max(80, "Texto do CTA deve ter no máximo 80 caracteres")
+    .transform((value) => value || null)
+    .nullable()
+    .optional(),
+  ctaUrl: optionalCtaUrl,
+  placement: bannerPlacementSchema.optional(),
+  status: contentStatusSchema.optional(),
+  focalX: focalCoord.optional(),
+  focalY: focalCoord.optional(),
+  mobileFocalX: focalCoord.optional(),
+  mobileFocalY: focalCoord.optional(),
+});
 
 export const updateBannerInput = bannerUpdateFields.extend({
   id: z.string().min(1, "ID do banner é obrigatório"),

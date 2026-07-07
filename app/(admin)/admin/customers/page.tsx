@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth-utils";
-import { prefetchCustomers } from "@/modules/customers/prefetch";
-import { parseCustomersSearchParams } from "@/modules/customers/utils";
+import { prefetchCustomers } from "@/modules/customers/server/prefetch";
+import { parseCustomersSearchParams } from "@/modules/customers/params";
 import { HydrateClient } from "@/trpc/server";
 import { ErrorBoundary } from "react-error-boundary";
 import { Suspense } from "react";

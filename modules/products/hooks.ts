@@ -18,7 +18,7 @@ import {
   normalizeInventoryParams,
   normalizeProductsParams,
   normalizeStoreProductsParams,
-} from "@/modules/products/utils";
+} from "@/modules/products/params";
 import { useTRPC } from "@/trpc/client";
 
 export const useProductsSuspense = (params: Partial<ProductsInput>) => {

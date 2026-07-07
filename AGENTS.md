@@ -30,6 +30,38 @@ Server Components - Prefetch data on the server and stream it to the client
 Streaming - Leverage Next.js streaming for optimal loading performance
 Suspense - Use useSuspenseQuery with Suspense boundaries for loading states
 
+# Data Fetching Rules
+
+There are two server-side data patterns. Pick by who consumes the data; never mix them:
+
+- Data consumed by a **client component** (tables, filters, mutations, anything using `useSuspenseQuery`): call the feature's prefetch helper (`modules/<feature>/server/prefetch.ts`) in the page, wrap the tree in `<HydrateClient>` with Suspense/ErrorBoundary, and read via the module's `hooks.ts`.
+- Data consumed **only by server components** (home sections, `generateMetadata`, header nav): call the feature's getter in `modules/<feature>/server/storefront.ts`, built on the server `caller` from `@/trpc/server` and wrapped with `cacheByInput` from `@/lib/request-cache` for per-request dedup.
+- Never fetch server-component data through `getQueryClient()`: the request query client is dehydrated by `<HydrateClient>` (including pending queries), so anything on it gets serialized and shipped to the browser even when no client component reads it. `getQueryClient` exists only to power `prefetch`/`HydrateClient`.
+
+# Code Organization
+
+Feature code lives in `modules/<feature>/` (account, auth, banners, cart, categories, checkout, collections, customers, media, products). Standard layout — only create the files a feature needs:
+
+- `server/` — server-only code; every file starts with `import "server-only"`:
+  - `router.ts` — the feature's tRPC router, composed into `trpc/routers/_app.ts`.
+  - `<surface>-procedures.ts` — procedure groups when the router is large (see products: `admin-procedures.ts`, `store-procedures.ts`, `inventory-procedures.ts`), spread into `router.ts`.
+  - `queries.ts` — Drizzle select fragments and read helpers.
+  - `operations.ts` — multi-step database writes.
+  - `storefront.ts` — caller-based getters for server components.
+  - `prefetch.ts` — prefetch helpers for the HydrateClient pattern.
+  - Other role-named helpers as needed (`slug.ts`, `payments.ts`, `ai.ts`, `assertions.ts`, `errors.ts`).
+- `components/` — the feature's components. Use `admin/` + `store/` subfolders when the feature has components for both surfaces (products); keep it flat when it serves one surface.
+- `hooks.ts` — client-only TanStack Query hooks; starts with `import "client-only"`.
+- `params.ts` — searchParams parsing and input normalizers (isomorphic).
+- `validations.ts` — Zod schemas shared by router inputs and forms; `form-schema.ts`/`form-utils.ts` for form-specific pieces.
+- `types.ts`, `constants.ts`, `utils.ts` — `utils.ts` holds small pure helpers only.
+
+Rules:
+
+- Name files by role. No `*-utils` grab bags: if a helper is server-only it goes under `server/` with a role name; if it parses params it goes in `params.ts`.
+- Root folders are only for cross-cutting code used by several features: `components/ui` (shadcn), `components/admin` (admin shell + shared table components), `components/store` (store shell — header, footer, newsletter — plus page compositions like `home/` and `editorial/`), `lib/`, `constants/`, `types/`.
+- A component that belongs to a feature lives in that feature's module even when other modules' pages import it (e.g. collections pages import `product-card` from the products module).
+
 # Core Storefront Concept
 
 The public storefront is the customer-facing part of the application.

@@ -3,14 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { CollectionCard } from "@/components/store/collections/collection-card";
+import { CollectionCard } from "@/modules/collections/components/collection-card";
 import { Newsletter } from "@/components/store/home/newsletter";
 import {
   getCollectionDescription,
   getCollectionEyebrow,
   getCollectionImage,
-} from "@/components/store/collections/collection-utils";
-import { getStoreCollections } from "@/modules/collections/storefront";
+} from "@/modules/collections/components/collection-utils";
+import { getStoreCollections } from "@/modules/collections/server/storefront";
 
 export const metadata: Metadata = {
   title: "Coleções | Clarisse",
@@ -91,7 +91,8 @@ const CollectionsPage = async () => {
       <section className="border-b border-foreground/10 bg-foreground">
         <Link
           href={`/colecoes/${featured.slug}`}
-          className="group relative isolate flex min-h-[72svh] w-full items-end overflow-hidden">
+          className="group relative isolate flex min-h-[72svh] w-full items-end overflow-hidden"
+        >
           <Image
             src={featureImageData.src}
             alt={featureImageData.alt}
@@ -139,7 +140,8 @@ const CollectionsPage = async () => {
               </div>
               <Link
                 href="/products"
-                className="group hidden shrink-0 items-center gap-2 pb-2 text-[11px] uppercase tracking-[0.22em] text-foreground/70 transition-colors hover:text-foreground md:inline-flex">
+                className="group hidden shrink-0 items-center gap-2 pb-2 text-[11px] uppercase tracking-[0.22em] text-foreground/70 transition-colors hover:text-foreground md:inline-flex"
+              >
                 <span className="border-b border-foreground/30 pb-1 transition-colors group-hover:border-foreground">
                   Ver todo o catálogo
                 </span>

@@ -17,6 +17,13 @@ export const trpc = createTRPCOptionsProxy({
   queryClient: getQueryClient,
 });
 
+// Server caller for data consumed ONLY by server components. It is detached
+// from the query client on purpose: anything fetched through `getQueryClient`
+// gets dehydrated by <HydrateClient> and shipped to the browser, even when no
+// client component reads it. Wrap callers of this in React.cache (see
+// lib/request-cache.ts) to keep per-request deduplication.
+export const caller = appRouter.createCaller(createTRPCContext);
+
 export function HydrateClient(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   return (

@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { ProductBreadcrumb } from "@/components/store/product/product-breadcrumb";
+import { ProductBreadcrumb } from "@/modules/products/components/store/product-breadcrumb";
 import { Newsletter } from "@/components/store/home/newsletter";
-import { CollectionHero } from "@/components/store/collections/collection-hero";
-import { CollectionHighlights } from "@/components/store/collections/collection-highlights";
+import { CollectionHero } from "@/modules/collections/components/collection-hero";
+import { CollectionHighlights } from "@/modules/collections/components/collection-highlights";
 import {
   CollectionProductsSection,
   CollectionProductsSkeleton,
-} from "@/components/store/collections/collection-products-section";
-import { getStoreCollectionBySlug } from "@/modules/collections/storefront";
-import { getStoreProducts } from "@/modules/products/storefront";
+} from "@/modules/collections/components/collection-products-section";
+import { getStoreCollectionBySlug } from "@/modules/collections/server/storefront";
+import { getStoreProducts } from "@/modules/products/server/storefront";
 
 export const generateMetadata = async ({
   params,

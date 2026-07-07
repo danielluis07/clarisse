@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ProductBreadcrumb } from "@/components/store/product/product-breadcrumb";
+import { ProductBreadcrumb } from "@/modules/products/components/store/product-breadcrumb";
 import { EditorialCard } from "@/components/store/editorial/editorial-card";
 import { Newsletter } from "@/components/store/home/newsletter";
 import {
@@ -169,7 +169,8 @@ const EditorialStoryPage = async ({
               </div>
               <Link
                 href="/editorial"
-                className="group hidden shrink-0 items-center gap-2 pb-2 text-[11px] uppercase tracking-[0.22em] text-foreground/70 transition-colors hover:text-foreground md:inline-flex">
+                className="group hidden shrink-0 items-center gap-2 pb-2 text-[11px] uppercase tracking-[0.22em] text-foreground/70 transition-colors hover:text-foreground md:inline-flex"
+              >
                 <span className="border-b border-foreground/30 pb-1 transition-colors group-hover:border-foreground">
                   Ver tudo
                 </span>

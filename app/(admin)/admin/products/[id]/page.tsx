@@ -2,11 +2,11 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { requireAdmin } from "@/lib/auth-utils";
-import { ProductForm } from "@/modules/products/components/form/product-form";
+import { ProductForm } from "@/modules/products/components/admin/form/product-form";
 import {
   prefetchProduct,
   prefetchProductFormOptions,
-} from "@/modules/products/prefetch";
+} from "@/modules/products/server/prefetch";
 import { HydrateClient } from "@/trpc/server";
 
 const EditProductPage = async ({

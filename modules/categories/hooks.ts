@@ -6,7 +6,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { normalizeCategoriesParams } from "@/modules/categories/utils";
+import { normalizeCategoriesParams } from "@/modules/categories/params";
 import type {
   CategoriesInput,
   CategoryInput,

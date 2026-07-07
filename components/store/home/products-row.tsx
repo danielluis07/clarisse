@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import {
   ProductCard,
   type ProductCardColor,
-} from "@/components/store/product-card";
+} from "@/modules/products/components/store/product-card";
 
 export type ProductGridItem = {
   slug: string;

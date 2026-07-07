@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PAGINATION } from "@/constants";
-import { isoDate } from "@/validations";
+import { isoDate } from "@/lib/validations";
 
 export const customerSortBySchema = z.enum(["createdAt", "updatedAt", "name"]);
 export const customerSortOrderSchema = z.enum(["asc", "desc"]);

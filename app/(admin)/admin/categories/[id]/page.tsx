@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth-utils";
 import { HydrateClient } from "@/trpc/server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { prefetchCategory } from "@/modules/categories/prefetch";
+import { prefetchCategory } from "@/modules/categories/server/prefetch";
 import { CategoryForm } from "@/modules/categories/components/category-form";
 
 const EditCategoryPage = async ({

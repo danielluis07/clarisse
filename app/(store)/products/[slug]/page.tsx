@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { ProductPageView } from "@/components/store/product/product-page-view";
-import { RelatedProducts } from "@/components/store/related-products";
+import { ProductPageView } from "@/modules/products/components/store/product-page-view";
+import { RelatedProducts } from "@/modules/products/components/store/related-products";
 import {
   prefetchStoreProduct,
   prefetchStoreRelatedProducts,
-} from "@/modules/products/prefetch";
+} from "@/modules/products/server/prefetch";
 import { HydrateClient } from "@/trpc/server";
 
 const ProductDetailsPage = async ({

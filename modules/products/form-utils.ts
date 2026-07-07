@@ -1,4 +1,4 @@
-import type { ProductImageSlot } from "@/components/media/product-images-field";
+import type { ProductImageSlot } from "@/modules/media/components/product-images-field";
 import { centsToReais } from "@/lib/utils";
 import type { ProductOutput } from "@/modules/products/types";
 import type {

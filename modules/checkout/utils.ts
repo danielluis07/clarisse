@@ -73,8 +73,7 @@ export const getPaymentOrderId = (payment: {
   metadata?: unknown;
 }) => {
   const metadata = payment.metadata as
-    | { order_id?: string; order_number?: string }
-    | undefined;
+    { order_id?: string; order_number?: string } | undefined;
 
   return payment.external_reference ?? metadata?.order_id ?? null;
 };

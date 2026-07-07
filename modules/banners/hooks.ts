@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import type { BannerInput, BannersInput } from "@/modules/banners/types";
-import { normalizeBannersParams } from "@/modules/banners/utils";
+import { normalizeBannersParams } from "@/modules/banners/params";
 import { useTRPC } from "@/trpc/client";
 
 export const useBannersSuspense = (params: Partial<BannersInput>) => {

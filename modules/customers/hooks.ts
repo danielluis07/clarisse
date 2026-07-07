@@ -2,7 +2,7 @@ import "client-only";
 
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { normalizeCustomersParams } from "@/modules/customers/utils";
+import { normalizeCustomersParams } from "@/modules/customers/params";
 import type { CustomerInput, CustomersInput } from "@/modules/customers/types";
 
 export const useCustomersSuspense = (params: Partial<CustomersInput>) => {

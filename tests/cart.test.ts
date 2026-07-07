@@ -19,7 +19,7 @@ const {
   getCartItemCount,
   getCartSubtotalCents,
   getCartLineTotalCents,
-} = await import("@/hooks/cart");
+} = await import("@/modules/cart/hooks");
 
 const makeItem = (
   overrides: Partial<AddCartItemInput> = {},

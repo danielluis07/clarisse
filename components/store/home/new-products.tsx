@@ -1,6 +1,6 @@
 import { ProductsRow } from "@/components/store/home/products-row";
 import { mapStoreProduct } from "@/lib/map-store-product";
-import { getStoreProducts } from "@/modules/products/storefront";
+import { getStoreProducts } from "@/modules/products/server/storefront";
 
 export const NewProducts = async () => {
   const { data } = await getStoreProducts({

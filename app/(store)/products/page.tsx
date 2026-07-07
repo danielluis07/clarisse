@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { ProductsGrid } from "@/components/store/products/products-grid";
+import { ProductsGrid } from "@/modules/products/components/store/products-grid";
 import {
   ProductsGridError,
   ProductsGridSkeleton,
-} from "@/components/store/products/products-grid-skeleton";
-import { prefetchStoreProducts } from "@/modules/products/prefetch";
-import { parseStoreProductsSearchParams } from "@/modules/products/utils";
+} from "@/modules/products/components/store/products-grid-skeleton";
+import { prefetchStoreProducts } from "@/modules/products/server/prefetch";
+import { parseStoreProductsSearchParams } from "@/modules/products/params";
 import { HydrateClient } from "@/trpc/server";
 
 export const metadata: Metadata = {

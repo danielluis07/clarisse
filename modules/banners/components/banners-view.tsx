@@ -24,7 +24,7 @@ import {
   useBannersActiveFiltersCount,
 } from "@/modules/banners/components/banners-filters";
 import { useBannersSuspense, useDeleteBanners } from "@/modules/banners/hooks";
-import { parseBannersSearchParams } from "@/modules/banners/utils";
+import { parseBannersSearchParams } from "@/modules/banners/params";
 import { useURLFilters } from "@/hooks/use-url-filters";
 import { useConfirm } from "@/providers/confirm-provider";
 import { getDeleteErrorMessage } from "@/modules/banners/form-utils";

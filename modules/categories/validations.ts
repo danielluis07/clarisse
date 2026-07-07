@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PAGINATION } from "@/constants";
-import { isoDate } from "@/validations";
+import { isoDate } from "@/lib/validations";
 
 export const categorySortBySchema = z.enum([
   "createdAt",

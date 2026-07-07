@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { RegisterForm } from "@/components/auth/register-form";
+import { RegisterForm } from "@/modules/auth/components/register-form";
 
 export const metadata = {
   title: "Criar conta | Clarisse",

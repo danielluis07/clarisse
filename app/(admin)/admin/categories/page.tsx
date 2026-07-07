@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth-utils";
 import { CategoriesView } from "@/modules/categories/components/categories-view";
-import { prefetchCategories } from "@/modules/categories/prefetch";
-import { parseCategoriesSearchParams } from "@/modules/categories/utils";
+import { prefetchCategories } from "@/modules/categories/server/prefetch";
+import { parseCategoriesSearchParams } from "@/modules/categories/params";
 import { HydrateClient } from "@/trpc/server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";

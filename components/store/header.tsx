@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { User, Menu } from "lucide-react";
 import { AnnouncementBar } from "@/components/store/announcement-bar";
-import { CartSheet } from "@/components/store/cart/cart-sheet";
+import { CartSheet } from "@/modules/cart/components/cart-sheet";
 import { HeaderNav, HeaderNavSkeleton } from "@/components/store/header-nav";
 import { SearchDialog } from "@/components/store/search-dialog";
 

@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth-utils";
 import { BannersView } from "@/modules/banners/components/banners-view";
-import { prefetchBanners } from "@/modules/banners/prefetch";
-import { parseBannersSearchParams } from "@/modules/banners/utils";
+import { prefetchBanners } from "@/modules/banners/server/prefetch";
+import { parseBannersSearchParams } from "@/modules/banners/params";
 import { HydrateClient } from "@/trpc/server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";

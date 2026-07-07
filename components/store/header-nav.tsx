@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getStoreCategories } from "@/modules/categories/storefront";
+import { getStoreCategories } from "@/modules/categories/server/storefront";
 
 const CATEGORY_NAV_LIMIT = 8;
 

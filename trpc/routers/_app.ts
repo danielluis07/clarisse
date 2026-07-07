@@ -1,13 +1,13 @@
 import { createTRPCRouter } from "@/trpc/init";
 import type { inferRouterOutputs } from "@trpc/server";
-import { bannersRouter } from "@/trpc/routers/banners";
-import { customersRouter } from "@/trpc/routers/customers";
-import { categoriesRouter } from "@/trpc/routers/categories";
-import { collectionsRouter } from "@/trpc/routers/collections";
-import { mediaRouter } from "@/trpc/routers/media";
-import { productsRouter } from "@/trpc/routers/products";
-import { checkoutRouter } from "@/trpc/routers/checkout";
-import { accountRouter } from "@/trpc/routers/account";
+import { accountRouter } from "@/modules/account/server/router";
+import { bannersRouter } from "@/modules/banners/server/router";
+import { categoriesRouter } from "@/modules/categories/server/router";
+import { checkoutRouter } from "@/modules/checkout/server/router";
+import { collectionsRouter } from "@/modules/collections/server/router";
+import { customersRouter } from "@/modules/customers/server/router";
+import { mediaRouter } from "@/modules/media/server/router";
+import { productsRouter } from "@/modules/products/server/router";
 
 export const appRouter = createTRPCRouter({
   banners: bannersRouter,

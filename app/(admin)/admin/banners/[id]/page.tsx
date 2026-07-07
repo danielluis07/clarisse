@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth-utils";
 import { BannerForm } from "@/modules/banners/components/banner-form";
-import { prefetchBanner } from "@/modules/banners/prefetch";
+import { prefetchBanner } from "@/modules/banners/server/prefetch";
 import { HydrateClient } from "@/trpc/server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";

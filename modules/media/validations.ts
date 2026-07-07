@@ -16,10 +16,7 @@ export const mediaFolderSchema = z
   .trim()
   .min(1, "Pasta de destino é obrigatória")
   .max(80, "Pasta de destino muito longa")
-  .regex(
-    /^[a-zA-Z0-9._/-]+$/,
-    "Pasta de destino contém caracteres inválidos",
-  );
+  .regex(/^[a-zA-Z0-9._/-]+$/, "Pasta de destino contém caracteres inválidos");
 
 export const createPresignedUploadInput = z.object({
   filename: z.string().trim().min(1, "Nome do arquivo é obrigatório").max(255),

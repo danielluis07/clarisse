@@ -1,4 +1,4 @@
-import { CheckoutError } from "@/modules/checkout/errors";
+import { CheckoutError } from "@/modules/checkout/server/errors";
 import { MercadoPagoWebhookPayload } from "@/types/mercadopago";
 import type { NextRequest } from "next/server";
 import {

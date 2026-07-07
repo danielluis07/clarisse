@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckoutReturnCartEffect } from "@/components/store/checkout/checkout-return-cart-effect";
+import { CheckoutReturnCartEffect } from "@/modules/checkout/components/checkout-return-cart-effect";
 import { mpPayment } from "@/lib/mercadopago";
 import {
   copyByStatus,
@@ -60,13 +60,15 @@ const CheckoutReturnPage = async ({
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/products"
-            className="flex h-11 items-center justify-center bg-foreground px-6 text-[11px] uppercase tracking-[0.22em] text-background transition-opacity hover:opacity-90">
+            className="flex h-11 items-center justify-center bg-foreground px-6 text-[11px] uppercase tracking-[0.22em] text-background transition-opacity hover:opacity-90"
+          >
             Continuar comprando
           </Link>
           {status === "failure" && (
             <Link
               href="/checkout"
-              className="flex h-11 items-center justify-center border border-foreground/15 px-6 text-[11px] uppercase tracking-[0.22em] text-foreground transition-colors hover:border-foreground">
+              className="flex h-11 items-center justify-center border border-foreground/15 px-6 text-[11px] uppercase tracking-[0.22em] text-foreground transition-colors hover:border-foreground"
+            >
               Voltar ao checkout
             </Link>
           )}

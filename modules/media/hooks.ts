@@ -88,7 +88,9 @@ export const useDeleteMedia = () => {
 
 export const useCleanupExpiredTemporaryMedia = () => {
   const trpc = useTRPC();
-  return useMutation(trpc.media.cleanupExpiredTemporaryAssets.mutationOptions());
+  return useMutation(
+    trpc.media.cleanupExpiredTemporaryAssets.mutationOptions(),
+  );
 };
 
 /**

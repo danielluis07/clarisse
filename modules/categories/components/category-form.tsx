@@ -10,7 +10,7 @@ import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { CategoryImageField } from "@/components/media/category-image-field";
+import { CategoryImageField } from "@/modules/media/components/category-image-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,

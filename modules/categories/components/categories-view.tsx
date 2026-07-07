@@ -16,7 +16,7 @@ import {
   useDeleteCategories,
 } from "@/modules/categories/hooks";
 import type { CategoryOutput } from "@/modules/categories/types";
-import { parseCategoriesSearchParams } from "@/modules/categories/utils";
+import { parseCategoriesSearchParams } from "@/modules/categories/params";
 import type { Row } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import Link from "next/link";

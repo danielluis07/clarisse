@@ -8,7 +8,7 @@ import { sql } from "drizzle-orm";
 import { env } from "@/lib/env";
 
 export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL,
+  baseURL: env.NEXT_PUBLIC_APP_URL,
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCustomersSuspense } from "@/modules/customers/hooks";
-import { parseCustomersSearchParams } from "@/modules/customers/utils";
+import { parseCustomersSearchParams } from "@/modules/customers/params";
 import { useSearchParams } from "next/navigation";
 import { columns } from "@/modules/customers/components/customers-columns";
 import { DataTable } from "@/components/ui/data-table";

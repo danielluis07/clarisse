@@ -1,4 +1,4 @@
-import type { ProductCardColor } from "@/components/store/product-card";
+import type { ProductCardColor } from "@/modules/products/components/store/product-card";
 
 /**
  * Placeholder catalogue used by the editorial/collection design pages while the

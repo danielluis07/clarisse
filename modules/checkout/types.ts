@@ -8,11 +8,7 @@ export type OrderStatus =
   | "refunded";
 
 export type PaymentStatus =
-  | "pending"
-  | "paid"
-  | "failed"
-  | "refunded"
-  | "partially_refunded";
+  "pending" | "paid" | "failed" | "refunded" | "partially_refunded";
 
 export type FulfillmentStatus =
   | "unfulfilled"

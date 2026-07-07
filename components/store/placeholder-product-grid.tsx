@@ -1,4 +1,4 @@
-import { ProductCard } from "@/components/store/product-card";
+import { ProductCard } from "@/modules/products/components/store/product-card";
 import type { PlaceholderProduct } from "@/lib/placeholder/products";
 
 /**

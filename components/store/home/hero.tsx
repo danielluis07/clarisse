@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Fragment, type CSSProperties } from "react";
 
-import { getStoreHeroBanner } from "@/modules/banners/storefront";
+import { getStoreHeroBanner } from "@/modules/banners/server/storefront";
 import {
   focalToPosition,
   HERO_IMAGE_FOCAL_CLASS,

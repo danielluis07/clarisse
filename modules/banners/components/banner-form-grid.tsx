@@ -4,7 +4,7 @@ import { Save } from "lucide-react";
 import Link from "next/link";
 import { Controller, type Control, useWatch } from "react-hook-form";
 
-import { BannerImageField } from "@/components/media/banner-image-field";
+import { BannerImageField } from "@/modules/media/components/banner-image-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,

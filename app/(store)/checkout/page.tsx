@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { requireUser } from "@/lib/auth-utils";
-import { CheckoutView } from "@/components/store/checkout/checkout-view";
+import { CheckoutView } from "@/modules/checkout/components/checkout-view";
 
 export const metadata: Metadata = {
   title: "Finalizar compra | Clarisse",
