@@ -13,6 +13,9 @@ export const createMercadoPagoCheckoutInput = z.object({
   // The shipping address is one the logged-in customer already saved to their
   // account, so we only need its id — ownership is verified server-side.
   addressId: trimmedString.min(1),
+  // Melhor Envio service id chosen by the customer. The price is re-quoted
+  // server-side; only the service identity is trusted from the client.
+  shippingServiceId: z.number().int().positive(),
 });
 
 export type CreateMercadoPagoCheckoutInput = z.infer<

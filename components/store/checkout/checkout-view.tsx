@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -8,9 +8,12 @@ import { toast } from "sonner";
 import { useCartStore } from "@/hooks/cart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckoutAddressSelect } from "@/components/store/checkout/checkout-address-select";
+import { CheckoutShippingSelect } from "@/components/store/checkout/checkout-shipping-select";
 import { CheckoutEmpty } from "@/components/store/checkout/checkout-empty";
 import { CheckoutSummary } from "@/components/store/checkout/checkout-summary";
 import { useCreateCheckout } from "@/modules/checkout/hooks";
+import { useGetAddresses } from "@/modules/account/hooks";
+import { useShippingQuote } from "@/modules/shipping/hooks";
 
 export const CheckoutView = ({ contactEmail }: { contactEmail: string }) => {
   const items = useCartStore((state) => state.items);
@@ -18,7 +21,44 @@ export const CheckoutView = ({ contactEmail }: { contactEmail: string }) => {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null,
   );
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(
+    null,
+  );
   const { mutate, isPending } = useCreateCheckout();
+
+  const { data: addresses } = useGetAddresses();
+  const postalCode =
+    addresses?.find((address) => address.id === selectedAddressId)
+      ?.postalCode ?? null;
+
+  const quoteItems = useMemo(
+    () =>
+      items.map((item) => ({
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+      })),
+    [items],
+  );
+
+  const shippingEnabled = Boolean(postalCode) && quoteItems.length > 0;
+  const {
+    data: quote,
+    isLoading: isQuoteLoading,
+    isError: isQuoteError,
+    error: quoteError,
+  } = useShippingQuote(
+    { toPostalCode: postalCode ?? "", items: quoteItems },
+    shippingEnabled,
+  );
+
+  // Derive the selected carrier during render (no effect needed): honor the
+  // user's pick when it still exists in the latest quote, otherwise fall back
+  // to the cheapest option.
+  const options = quote?.options ?? [];
+  const selectedShipping =
+    options.find((option) => option.serviceId === selectedServiceId) ??
+    options[0] ??
+    null;
 
   // The cart lives in localStorage, so wait for rehydration before deciding
   // between the empty state and the checkout to avoid an SSR/CSR mismatch.
@@ -36,8 +76,14 @@ export const CheckoutView = ({ contactEmail }: { contactEmail: string }) => {
       return;
     }
 
+    if (!selectedShipping) {
+      toast.error("Selecione uma opção de frete.");
+      return;
+    }
+
     mutate({
       addressId: selectedAddressId,
+      shippingServiceId: selectedShipping.serviceId,
       items: items.map((item) => ({
         productVariantId: item.productVariantId,
         quantity: item.quantity,
@@ -65,18 +111,35 @@ export const CheckoutView = ({ contactEmail }: { contactEmail: string }) => {
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
-          <div className="lg:col-span-7">
+          <div className="space-y-14 lg:col-span-7">
             <CheckoutAddressSelect
               contactEmail={contactEmail}
               selectedAddressId={selectedAddressId}
               onSelect={setSelectedAddressId}
             />
+            <CheckoutShippingSelect
+              enabled={shippingEnabled}
+              isLoading={isQuoteLoading}
+              errorMessage={
+                isQuoteError
+                  ? quoteError instanceof Error
+                    ? quoteError.message
+                    : "Não foi possível calcular o frete no momento."
+                  : null
+              }
+              options={options}
+              isFree={quote?.freeShipping.applied ?? false}
+              selectedServiceId={selectedShipping?.serviceId ?? null}
+              onSelect={(option) => setSelectedServiceId(option.serviceId)}
+            />
           </div>
           <div className="lg:col-span-5">
             <CheckoutSummary
               items={items}
+              shippingOption={selectedShipping}
+              freeShipping={quote?.freeShipping ?? null}
               isPlacingOrder={isPending}
-              canPlaceOrder={Boolean(selectedAddressId)}
+              canPlaceOrder={Boolean(selectedAddressId && selectedShipping)}
               onPlaceOrder={handlePlaceOrder}
             />
           </div>

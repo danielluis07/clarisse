@@ -10,7 +10,8 @@ import {
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { and, eq } from "drizzle-orm";
 import { createMercadoPagoCheckoutInput } from "@/modules/checkout/validations";
-import { getCheckoutShippingCents } from "@/modules/checkout/constants";
+import { resolveCheckoutShipping } from "@/modules/shipping/server-utils";
+import { ShippingError } from "@/modules/shipping/errors";
 import {
   centsToMercadoPagoAmount,
   generateOrderNumber,
@@ -82,7 +83,24 @@ export const checkoutRouter = createTRPCRouter({
         (total, line) => total + line.lineTotalCents,
         0,
       );
-      const shippingCents = getCheckoutShippingCents(subtotalCents);
+
+      // Re-quote the chosen carrier server-side — the client only tells us
+      // which service it picked, never the price.
+      let shipping;
+      try {
+        shipping = await resolveCheckoutShipping({
+          postalCode: address.postalCode,
+          items: input.items,
+          shippingServiceId: input.shippingServiceId,
+        });
+      } catch (error) {
+        if (error instanceof ShippingError) {
+          throw new CheckoutError(error.message, error.status);
+        }
+        throw error;
+      }
+
+      const shippingCents = shipping.shippingCents;
       const totalCents = subtotalCents + shippingCents;
 
       const phone = customer.phone ?? null;
@@ -152,6 +170,10 @@ export const checkoutRouter = createTRPCRouter({
             taxCents: 0,
             totalCents,
             shippingAddress,
+            shippingProvider: shipping.provider,
+            shippingServiceId: shipping.serviceId,
+            shippingServiceName: shipping.serviceName,
+            shippingCompanyName: shipping.companyName,
           })
           .returning({
             id: orders.id,
@@ -206,6 +228,12 @@ export const checkoutRouter = createTRPCRouter({
               street_name: address.addressLine1,
               street_number: address.number ?? undefined,
             },
+          },
+          // Charge the shipping on top of the items so the amount paid matches
+          // orders.totalCents (the webhook validates paid === total).
+          shipments: {
+            cost: centsToMercadoPagoAmount(shippingCents),
+            mode: "not_specified",
           },
           back_urls: {
             success: `${appUrl}/checkout/retorno?status=success&order_id=${createdOrder.id}`,

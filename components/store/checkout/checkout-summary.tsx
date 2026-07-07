@@ -9,19 +9,23 @@ import {
 import { centsToReais } from "@/lib/utils";
 import type { CartItem } from "@/types/cart";
 import { CheckoutLineItem } from "@/components/store/checkout/checkout-line-item";
-import {
-  CHECKOUT_INSTALLMENTS,
-  FREE_SHIPPING_THRESHOLD_CENTS,
-  getCheckoutShippingCents,
-} from "@/modules/checkout/constants";
+import { CHECKOUT_INSTALLMENTS } from "@/modules/checkout/constants";
+import type {
+  FreeShippingInfo,
+  ShippingQuoteOption,
+} from "@/modules/shipping/types";
 
 export const CheckoutSummary = ({
   items,
+  shippingOption,
+  freeShipping,
   isPlacingOrder,
   canPlaceOrder,
   onPlaceOrder,
 }: {
   items: CartItem[];
+  shippingOption: ShippingQuoteOption | null;
+  freeShipping: FreeShippingInfo | null;
   isPlacingOrder: boolean;
   canPlaceOrder: boolean;
   onPlaceOrder: () => void;
@@ -30,18 +34,22 @@ export const CheckoutSummary = ({
 
   const subtotalCents = getCartSubtotalCents(items);
   const itemCount = getCartItemCount(items);
-  const hasFreeShipping = subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
-  const shippingCents = getCheckoutShippingCents(subtotalCents);
+
+  const isFree = freeShipping?.applied ?? false;
+  const shippingKnown = isFree || shippingOption !== null;
+  const shippingCents = isFree ? 0 : (shippingOption?.priceCents ?? 0);
   const totalCents = subtotalCents + shippingCents;
-  const freeShippingRemaining = Math.max(
-    0,
-    FREE_SHIPPING_THRESHOLD_CENTS - subtotalCents,
-  );
-  const progress = Math.min(
-    100,
-    Math.round((subtotalCents / FREE_SHIPPING_THRESHOLD_CENTS) * 100),
-  );
   const installmentCents = Math.round(totalCents / CHECKOUT_INSTALLMENTS);
+
+  // Free-shipping progress bar, driven by the configurable store threshold
+  // returned with the quote.
+  const showProgress = Boolean(freeShipping?.enabled);
+  const thresholdCents = freeShipping?.thresholdCents ?? 0;
+  const remainingCents = freeShipping?.remainingCents ?? 0;
+  const progress =
+    thresholdCents > 0
+      ? Math.min(100, Math.round((subtotalCents / thresholdCents) * 100))
+      : 0;
 
   return (
     <aside className="lg:sticky lg:top-28">
@@ -69,7 +77,9 @@ export const CheckoutSummary = ({
           <div className="flex items-center justify-between gap-4 text-sm">
             <span className="text-foreground/60">Frete</span>
             <span className="tabular-nums">
-              {hasFreeShipping ? (
+              {!shippingKnown ? (
+                <span className="text-foreground/50">Selecione</span>
+              ) : isFree ? (
                 <span className="uppercase tracking-[0.16em] text-foreground/70">
                   Grátis
                 </span>
@@ -79,19 +89,21 @@ export const CheckoutSummary = ({
             </span>
           </div>
 
-          <div className="mt-1 flex flex-col gap-2">
-            <div className="h-1 bg-foreground/10">
-              <div
-                className="h-full bg-foreground transition-[width]"
-                style={{ width: `${progress}%` }}
-              />
+          {showProgress && (
+            <div className="mt-1 flex flex-col gap-2">
+              <div className="h-1 bg-foreground/10">
+                <div
+                  className="h-full bg-foreground transition-[width]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-[11px] leading-relaxed text-foreground/55">
+                {isFree
+                  ? "Frete grátis aplicado a este pedido."
+                  : `Faltam ${centsToReais(remainingCents)} para frete grátis.`}
+              </p>
             </div>
-            <p className="text-[11px] leading-relaxed text-foreground/55">
-              {hasFreeShipping
-                ? "Frete grátis aplicado a este pedido."
-                : `Faltam ${centsToReais(freeShippingRemaining)} para frete grátis.`}
-            </p>
-          </div>
+          )}
         </div>
 
         <div className="border-t border-foreground/10 px-6 py-5">

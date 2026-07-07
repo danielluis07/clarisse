@@ -3,9 +3,23 @@ import "client-only";
 import { useTRPC } from "@/trpc/client";
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import type { CalculateQuoteInput } from "@/modules/shipping/validations";
+
+/** Storefront freight quote. Disabled until there is a destination CEP + items. */
+export const useShippingQuote = (
+  input: CalculateQuoteInput,
+  enabled: boolean,
+) => {
+  const trpc = useTRPC();
+
+  return useQuery(
+    trpc.shipping.quote.queryOptions(input, { enabled, retry: false }),
+  );
+};
 
 export const useShippingSettingsSuspense = () => {
   const trpc = useTRPC();

@@ -1,7 +1,7 @@
 export const CHECKOUT_MAX_ITEM_QUANTITY = 99;
-export const FREE_SHIPPING_THRESHOLD_CENTS = 80000;
-export const STANDARD_SHIPPING_CENTS = 2900;
 export const CHECKOUT_INSTALLMENTS = 6;
 
-export const getCheckoutShippingCents = (subtotalCents: number) =>
-  subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS ? 0 : STANDARD_SHIPPING_CENTS;
+// Pre-checkout free-shipping hint shown in the mini-cart. The authoritative,
+// configurable threshold lives in store settings and is applied at checkout via
+// the Melhor Envio quote; this default mirrors that column's default.
+export const FREE_SHIPPING_THRESHOLD_CENTS = 80000;

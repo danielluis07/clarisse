@@ -31,6 +31,7 @@ import {
 import { ShippingError } from "@/modules/shipping/errors";
 import type { CalculateQuoteInput } from "@/modules/shipping/validations";
 import type {
+  CheckoutShipping,
   ShippingIntegrationStatus,
   ShippingQuoteResult,
 } from "@/modules/shipping/types";
@@ -304,7 +305,7 @@ const toCents = (value: string) => Math.round(Number(value) * 100);
 
 const normalizeQuoteResult = (
   services: CalculateShipmentService[],
-): ShippingQuoteResult => {
+): Omit<ShippingQuoteResult, "freeShipping"> => {
   const options: ShippingQuoteResult["options"] = [];
   const unavailable: ShippingQuoteResult["unavailable"] = [];
 
@@ -392,11 +393,67 @@ export const calculateQuote = async (
     };
   });
 
+  const subtotalCents = lines.reduce(
+    (total, line) => total + line.unitPriceCents * line.quantity,
+    0,
+  );
+  const applied = resolveFreeShipping(settings, subtotalCents);
+  const freeShipping = {
+    enabled: settings.freeShippingEnabled,
+    thresholdCents: settings.freeShippingThresholdCents,
+    applied,
+    remainingCents: applied
+      ? 0
+      : Math.max(0, settings.freeShippingThresholdCents - subtotalCents),
+  };
+
   const payload = buildQuotePayload(input.toPostalCode, settings, lines);
   const accessToken = await getValidAccessToken();
   const services = await calculateShipment(accessToken, payload);
 
-  return normalizeQuoteResult(services);
+  return { ...normalizeQuoteResult(services), freeShipping };
+};
+
+/**
+ * Server-side re-quote used at order creation. Never trusts a client-provided
+ * price: it recalculates and matches the chosen service by id, then applies the
+ * configurable free-shipping rule.
+ */
+export const resolveCheckoutShipping = async ({
+  postalCode,
+  items,
+  shippingServiceId,
+}: {
+  postalCode: string;
+  items: CalculateQuoteInput["items"];
+  shippingServiceId: number;
+}): Promise<CheckoutShipping> => {
+  const result = await calculateQuote({
+    toPostalCode: postalCode.replace(/\D/g, ""),
+    items,
+  });
+
+  const option = result.options.find(
+    (candidate) => candidate.serviceId === shippingServiceId,
+  );
+
+  if (!option) {
+    throw new ShippingError(
+      "A opção de frete selecionada não está mais disponível. Recalcule o frete.",
+      409,
+    );
+  }
+
+  const freeShippingApplied = result.freeShipping.applied;
+
+  return {
+    provider: "melhorenvio",
+    serviceId: option.serviceId,
+    serviceName: option.name,
+    companyName: option.companyName,
+    shippingCents: freeShippingApplied ? 0 : option.priceCents,
+    freeShippingApplied,
+  };
 };
 
 // ---------------------------------------------------------------------------

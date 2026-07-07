@@ -33,9 +33,27 @@ export type ShippingQuoteUnavailable = {
   error: string;
 };
 
+export type FreeShippingInfo = {
+  enabled: boolean;
+  thresholdCents: number;
+  applied: boolean;
+  remainingCents: number;
+};
+
 export type ShippingQuoteResult = {
   options: ShippingQuoteOption[];
   unavailable: ShippingQuoteUnavailable[];
+  freeShipping: FreeShippingInfo;
+};
+
+/** Resolved shipping for order creation (server-side re-quote). */
+export type CheckoutShipping = {
+  provider: "melhorenvio";
+  serviceId: number;
+  serviceName: string;
+  companyName: string;
+  shippingCents: number;
+  freeShippingApplied: boolean;
 };
 
 export type RawShippingService = CalculateShipmentService;
